@@ -5,17 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 28% 96%;
+  --background: 0 0% 100%;
   --foreground: 215 28% 14%;
-  --card: 210 30% 98%;
+  --card: 0 0% 100%;
   --card-foreground: 215 28% 14%;
-  --muted: 210 18% 90%;
-  --muted-foreground: 215 12% 40%;
+  --muted: 210 12% 96%;
+  --muted-foreground: 215 12% 38%;
   --accent: 198 74% 45%;
   --accent-foreground: 0 0% 100%;
-  --border: 210 18% 82%;
+  --border: 210 10% 88%;
   --ring: 198 60% 40%;
-  --input: 210 20% 92%;
+  --input: 210 10% 94%;
 }
 
 * {
@@ -28,11 +28,7 @@ body {
   font-family: "Zen Kaku Gothic Antique", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
-  background-image:
-    radial-gradient(circle at 10% 15%, rgba(84, 118, 153, 0.2), transparent 45%),
-    radial-gradient(circle at 85% 0%, rgba(32, 72, 100, 0.16), transparent 40%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(226, 236, 248, 0.95));
-  background-attachment: fixed;
+  background-image: none;
 }
 
 h1,

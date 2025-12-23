@@ -2,15 +2,8 @@ import { useMemo, useState } from 'react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
-import {
-  allTables,
-  ATTRIBUTES,
-  CursorState,
-  formatDate,
-  TableEntry,
-  TableRef,
-  TableState,
-} from '../../lib/skills'
+import { allTables, ATTRIBUTES, formatDate } from '../../lib/skills'
+import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/skills'
 
 type CursorViewProps = {
   tables: TableState
@@ -47,7 +40,7 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
   const nullCount = attributeTables.length - cursorCandidates.length
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="flex flex-col gap-8">
       <Card className="animate-fade-up">
         <CardHeader>
           <CardTitle className="heading-serif">属性タブ</CardTitle>
@@ -75,50 +68,54 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
           <CardTitle className="heading-serif">カーソル {activeCursor}</CardTitle>
           <CardDescription>NULL でない候補のみ表示。お気に入りを優先表示します。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>表示候補: {cursorCandidates.length} 件</span>
             <span>NULL: {nullCount} 件</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {cursorCandidates.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border bg-background/70 p-6 text-center text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border/60 bg-background p-6 text-center text-sm text-muted-foreground">
                 このカーソルで表示できる候補がありません
               </div>
             )}
             {cursorCandidates.map(({ table, entry }) => (
-              <div key={table.key} className="rounded-2xl border border-border bg-background/80 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold">{table.weapon}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {table.attribute} / {table.intensify}
+            <div key={table.key} className="rounded-2xl border border-border/50 bg-background p-4">
+                <div className="grid gap-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold">{table.weapon}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {table.attribute} / {table.intensify}
+                      </div>
+                    </div>
+                    {entry.favorite && <Badge>お気に入り</Badge>}
+                  </div>
+                  <div className="grid gap-2 text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground">グループ</span>
+                      <div className="font-medium">{entry.groupSkill}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">シリーズ</span>
+                      <div className="font-medium">{entry.seriesSkill}</div>
                     </div>
                   </div>
-                  {entry.favorite && <Badge>お気に入り</Badge>}
-                </div>
-                <div className="mt-4 grid gap-2 text-sm">
-                  <div>
-                    <span className="text-xs text-muted-foreground">グループ</span>
-                    <div className="font-medium">{entry.groupSkill}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      登録: {formatDate(entry.createdAt)}
+                    </span>
+                    <Button size="sm" onClick={() => onAdvanceCursor(activeAttribute)}>
+                      この結果でカーソルを進める
+                    </Button>
                   </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">シリーズ</span>
-                    <div className="font-medium">{entry.seriesSkill}</div>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">登録: {formatDate(entry.createdAt)}</span>
-                  <Button size="sm" onClick={() => onAdvanceCursor(activeAttribute)}>
-                    この結果でカーソルを進める
-                  </Button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="rounded-xl border border-border bg-muted/40 p-4 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
             カーソルを進めると、同じ属性の NULL なテーブルはグループ/シリーズともに「不明」で埋めます。
           </div>
         </CardContent>

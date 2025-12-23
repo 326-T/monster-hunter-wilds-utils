@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  allTables,
-  createId,
-  CURSOR_KEY,
-  CursorState,
-  STORAGE_KEY,
-  TableEntry,
-  TableState,
-} from '../lib/skills'
+import { allTables, createId, CURSOR_KEY, STORAGE_KEY } from '../lib/skills'
+import type { CursorState, TableEntry, TableState } from '../lib/skills'
 
 type StoredTableEntry = Omit<TableEntry, 'cursorId'> & { cursorId?: number }
 
