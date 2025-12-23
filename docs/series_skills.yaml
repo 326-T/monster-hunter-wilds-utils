@@ -1,0 +1,202 @@
+- name: 闢獣の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 力自慢Ⅰ
+    description: 鍔迫り合い、または相殺が成功した時、一定時間、基礎攻撃力+10
+  - condition: 4部位
+    name: 力自慢Ⅱ
+    description: 鍔迫り合い、または相殺が成功した時、一定時間、基礎攻撃力+25
+- name: 火竜の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 灼熱化Ⅰ
+    description: 攻撃を当てた時、確率で追加の火属性ダメージを与える
+  - condition: 4部位
+    name: 灼熱化Ⅱ
+    description: 追加で与える火属性ダメージが上昇する
+- name: 兇爪竜の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 連撃強化Ⅰ
+    description: 「連撃」スキルの効果発動時、有効時間を1秒延長し、基礎攻撃力+8
+  - condition: 4部位
+    name: 連撃強化Ⅱ
+    description: 「連撃」スキルの効果発動時、有効時間を2秒延長し、基礎攻撃力+18
+- name: 護鎖刃竜の命脈シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 破壊衝動Ⅰ
+    description: 大型モンスターの傷口を破壊した時、体力が少し回復する
+  - condition: 4部位
+    name: 破壊衝動Ⅱ
+    description: 大型モンスターの傷口を破壊した時、体力が回復する
+- name: 波衣竜の守護シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 守護のヴェールⅠ
+    description: 特殊装具を使用した時、一定時間防御力と耐性値が上昇する
+  - condition: 4部位
+    name: 守護のヴェールⅡ
+    description: 特殊装具を使用した時、一定時間防御力と耐性値が大きく上昇する
+- name: 煌雷竜の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 雷々響鳴Ⅰ
+    description: 「力の解放」のスキル発動時間を30秒延長する
+  - condition: 4部位
+    name: 雷々響鳴Ⅱ
+    description: 「力の解放」のスキル発動時間を90秒延長する
+- name: 雷顎竜の闘志シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 無尽蔵Ⅰ
+    description: 追加のスタミナゲージを得る
+  - condition: 4部位
+    name: 無尽蔵Ⅱ
+    description: 長い追加のスタミナゲージを得る
+- name: 雪獅子の闘志シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: ウォークライⅠ
+    description: ジェスチャー「雄叫び」をした時、一定時間、周囲の攻撃力が少し上昇。オトモとサポートハンターには効果が大きい。
+  - condition: 4部位
+    name: ウォークライⅡ
+    description: ジェスチャー「雄叫び」をした時、一定時間、周囲の攻撃力が上昇。オトモとサポートハンターには効果が大きい。
+- name: 鎧竜の守護シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 無傷の重装Ⅰ
+    description: 体力が最大の時、受けるダメージを5%軽減する
+  - condition: 4部位
+    name: 無傷の重装Ⅱ
+    description: 体力が最大の時、受けるダメージを10%軽減する
+- name: 凍峰竜の反逆シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 束縛反攻Ⅰ
+    description: 糸拘束状態、凍結状態の回復時、または拘束攻撃から解放された時、鍔迫り合いの後、一定時間、攻撃力が上昇
+  - condition: 4部位
+    name: 束縛反攻Ⅱ
+    description: 糸拘束状態、凍結状態の回復時、または拘束攻撃から解放された時、鍔迫り合いの後、一定時間、攻撃力が大きく上昇
+- name: 暗器蛸の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 蛮勇の食卓Ⅰ
+    description: こんがり肉などのアイテムを食べた時、一定時間、基礎攻撃力+15
+  - condition: 4部位
+    name: 蛮勇の食卓Ⅱ
+    description: こんがり肉などのアイテムを食べた時、一定時間、基礎攻撃力+25
+- name: 獄焔蛸の反逆シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 恨撃Ⅰ
+    description: 「逆恨み」スキル発動中、追加で少しダメージを与える
+  - condition: 4部位
+    name: 恨撃Ⅱ
+    description: 「逆恨み」スキル発動中、追加でダメージを与える
+- name: 黒蝕竜の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 黒蝕一体Ⅰ
+    description: 大型モンスターと対峙した時、狂竜症に感染する。
+  - condition: 4部位
+    name: 黒蝕一体Ⅱ
+    description: 大型モンスターと対峙した時、狂竜症に感染し、攻撃力が上昇する。克服時、さらに攻撃力が上昇する。
+- name: 鎖刃竜の飢餓シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 加速再生Ⅰ
+    description: 継続してモンスターに攻撃を当てると、体力が少し回復する(武器種により回復力は変動)
+  - condition: 4部位
+    name: 加速再生Ⅱ
+    description: 継続してモンスターに攻撃を当てると、体力が回復する(武器種により回復力は変動)
+- name: 泡狐竜の力シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 泡沫の舞Ⅰ
+    description: 泡状態【大】にならなくなる。回避行動を複数回行うことで泡状態【小】になる。
+  - condition: 4部位
+    name: 泡沫の舞Ⅱ
+    description: 泡状態【大】にならなくなる。泡状態時に回避能力を強化する。さらに回避行動を複数回行うことで泡状態【小】になる。
+- name: 白熾龍の脈動シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 超回復力Ⅰ
+    description: 体力に赤ゲージが無い状態でも、最大値までゆるやかに自動回復が継続する。
+  - condition: 4部位
+    name: 超回復力Ⅱ
+    description: 体力に赤ゲージが無い状態でも、最大値まで自動回復が継続する。
+- name: 花舞の祈りシリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 地の恵み【花舞】Ⅰ
+    description: 花舞の儀の期間中、クエストの報酬に特別なアイテムが追加される（クエストの途中からは発動しない）
+  - condition: 4部位
+    name: 地の恵み【花舞】Ⅱ
+    description: 花舞の儀の期間中、クエストの報酬に特別なアイテムが追加され、攻撃力と防御力が大きく上昇する
+- name: 千刃竜の闘志シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 千刃の身躱しⅠ
+    description: 「巧撃」スキルの効果時間を延長する。また、発動中に再び条件を満たすと効果時間が少し増える。(1回のみ)
+  - condition: 4部位
+    name: 千刃の身躱しⅡ
+    description: Ⅰと同様の効果が発動する。発動中に再び条件を満たしたとき、攻撃力が上昇する。
+- name: 海竜の渦雷シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 蒼雷一閃Ⅰ
+    description: 攻撃でダメージを蓄積させると、追加で雷属性ダメージが発生し、一定時間、会心率UP（一部特定の攻撃は対象外）
+  - condition: 4部位
+    name: 蒼雷一閃Ⅱ
+    description: Ⅰと同様の効果が発動する。追加の雷属性ダメージが上昇し、会心率UPの効果時間が少し増える。
+- name: 踊火の祈りシリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 地の恵み【踊火】Ⅰ
+    description: 踊火の儀の期間中、クエストの報酬に特別なアイテムが追加される（クエストの途中からは発動しない）
+  - condition: 4部位
+    name: 地の恵み【踊火】Ⅱ
+    description: 踊火の儀の期間中、クエストの報酬に特別なアイテムが追加され、攻撃力と防御力が大きく上昇する
+- name: 暗黒騎士の証シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: ダークアーツ
+    description: 体力ゲージに赤い部分がある間、属性攻撃力が上昇(大剣/ハンマー/狩猟笛は約1.2倍、その他武器種は約1.14倍)。大剣の一部の溜め斬りが、3段階まで溜めると強化される。
+  - condition: 4部位
+    name: ブラックナイト
+    description: 特殊アクションのブラックナイトが使用可能になる。
+- name: オメガレゾナンスシリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: レゾナンスⅠ
+    description: クエスト開始後、90秒ごとにレゾナンスファー(赤)とニアー(白)が切り替わります。発動条件は味方との距離で、ファー(赤)の時は離れてれば攻撃力+10、ニアー(白)の時は近づけば会心率+20%
+  - condition: 4部位
+    name: レゾナンスⅡ
+    description: ファー(赤)の効果が攻撃力+20に、ニアー(白)の効果が会心率+40%に上昇。また、「シールドオプション」や「連携プログラム」の効果も上昇します
+- name: 夢灯の祈りシリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 地の恵み【夢灯】Ⅰ
+    description: 夢灯の儀の期間中、クエストの報酬に特別なアイテムが追加される（クエストの途中からは発動しない）
+  - condition: 4部位
+    name: 地の恵み【夢灯】Ⅱ
+    description: 夢灯の儀の期間中、クエストの報酬に特別なアイテムが追加され、攻撃力が約1.09倍、防御力が+60される
+- name: 巨戟龍の黙示録シリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 宣戦呼応Ⅰ
+    description: 戦闘中の大型モンスターが怒ると、属性攻撃値が上昇する。
+  - condition: 4部位
+    name: 宣戦呼応Ⅱ
+    description: Ⅰの効果が上昇し、一定時間、ダメージを防ぐ防壁を得る。(防壁を得る効果は一定時間経過しないと再発動しません)
+- name: 祝謡の祈りシリーズ防具スキル
+  skills:
+  - condition: 2部位
+    name: 地の恵み【祝謡】Ⅰ
+    description: 祝謡の儀の期間中、クエストの報酬に特別なアイテムが追加される（クエストの途中からは発動しない）
+  - condition: 4部位
+    name: 地の恵み【祝謡】Ⅱ
+    description: 祝謡の儀の期間中、クエストの報酬に特別なアイテムが追加される（クエストの途中からは発動しない）
+- name: 不明
+  skills: []
