@@ -3,7 +3,6 @@ import { Badge } from './components/ui/badge'
 import { Button } from './components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
 import { Checkbox } from './components/ui/checkbox'
-import { Input } from './components/ui/input'
 import { Label } from './components/ui/label'
 import { Select } from './components/ui/select'
 import { cn } from './lib/utils'
@@ -139,7 +138,6 @@ function App() {
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
   const [intensifyFilter, setIntensifyFilter] = useState('all')
-  const [query, setQuery] = useState('')
   const [showPassed, setShowPassed] = useState(false)
 
   const [groupSkill, setGroupSkill] = useState('')
@@ -182,17 +180,13 @@ function App() {
   }, [])
 
   const filteredTables = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
     return allTables.filter((table) => {
       if (weaponFilter !== 'all' && table.weapon !== weaponFilter) return false
       if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
       if (intensifyFilter !== 'all' && table.intensify !== intensifyFilter) return false
-      if (normalizedQuery) {
-        return table.label.toLowerCase().includes(normalizedQuery)
-      }
       return true
     })
-  }, [weaponFilter, attributeFilter, intensifyFilter, query])
+  }, [weaponFilter, attributeFilter, intensifyFilter])
 
   useEffect(() => {
     if (!filteredTables.find((table) => table.key === selectedTableKey)) {
@@ -303,21 +297,23 @@ function App() {
         <div className="pointer-events-none absolute -top-32 right-10 h-72 w-72 rounded-full bg-[rgba(96,132,173,0.22)] blur-3xl animate-float" />
         <div className="pointer-events-none absolute bottom-[-120px] left-[-80px] h-80 w-80 rounded-full bg-[rgba(52,78,100,0.2)] blur-3xl" />
         <div className="mx-auto max-w-6xl px-6 py-10 lg:py-16">
-          <header className="mb-10 flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
+          <header className="mb-8 flex flex-col gap-4 sm:mb-10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Button
                 variant={activeView === 'save' ? 'default' : 'outline'}
                 onClick={() => setActiveView('save')}
+                className="w-full sm:w-auto"
               >
                 保存画面
               </Button>
               <Button
                 variant={activeView === 'cursor' ? 'default' : 'outline'}
                 onClick={() => setActiveView('cursor')}
+                className="w-full sm:w-auto"
               >
                 カーソルを進める画面
               </Button>
-              <Badge variant="outline" className="ml-auto">
+              <Badge variant="outline" className="w-fit sm:ml-auto">
                 ローカル保存
               </Badge>
             </div>
@@ -339,15 +335,6 @@ function App() {
                   <CardDescription>武器×属性×激化タイプのリンクから移動</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="table-search">検索</Label>
-                    <Input
-                      id="table-search"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="例: 太刀 火 攻撃"
-                    />
-                  </div>
                   <div className="grid gap-3">
                     <div className="space-y-2">
                       <Label>武器</Label>
@@ -393,7 +380,7 @@ function App() {
                     <span>一致: {filteredTables.length} 件</span>
                     <span>全体: {allTables.length} 件</span>
                   </div>
-                  <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                  <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1 sm:max-h-[360px]">
                     {filteredTables.length === 0 && (
                       <div className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
                         該当するテーブルがありません
@@ -498,7 +485,8 @@ function App() {
                   </div>
 
                   <div className="overflow-hidden rounded-2xl border border-border">
-                    <table className="w-full border-collapse text-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
                       <thead className="bg-muted/70 text-left text-xs uppercase tracking-[0.18em] text-muted-foreground">
                         <tr>
                           <th className="px-4 py-3">#</th>
@@ -547,10 +535,11 @@ function App() {
                                 {formatDate(entry.createdAt)}
                               </td>
                             </tr>
-                          )}
-                        )}
+                          )
+                        })}
                       </tbody>
-                    </table>
+                      </table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -562,7 +551,7 @@ function App() {
                   <CardTitle className="heading-serif">属性タブ</CardTitle>
                   <CardDescription>カーソルを進める属性を選択</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="grid grid-cols-2 gap-2 sm:grid-cols-1">
                   {ATTRIBUTES.map((attribute) => (
                     <Button
                       key={attribute}

@@ -1,84 +1,84 @@
-- name: 鱗張りの技法グループ防具スキル
+- name: 鱗張りの技法
   skills:
     - name: 乗り名人
       condition: 3部位
       description: モンスターに乗りやすくなり、乗り状態で成功しやすくなる。
-- name: 革細工の柔性グループ防具スキル
+- name: 革細工の柔性
   skills:
     - name: 採集の達人
       condition: 3部位
       description: 採集行動の速度が速くなり、採集・剥ぎ取り中に攻撃を受けてものけぞらなくなる。
-- name: 毛皮の昂揚グループ防具スキル
+- name: 毛皮の昂揚
   skills:
     - name: 不屈
       condition: 3部位
       description: クエスト中、力尽きる度に攻撃力と防御力が上がる。（最大2回まで）（一部クエストでは発生しない）
-- name: 甲虫の知らせグループ防具スキル
+- name: 甲虫の知らせ
   skills:
     - name: ハニーハンター
       condition: 3部位
       description: フィールドでハチミツを採取した時の取得数が増える
-- name: 護竜の脈動グループ防具スキル
+- name: 護竜の脈動
   skills:
     - name: 竜乳活性
       condition: 3部位
       description: 竜乳結晶の近くにいると、赤ゲージとスタミナの回復速度が上昇する
-- name: ヌシの誇りグループ防具スキル
+- name: ヌシの誇り
   skills:
     - name: 激励
       condition: 3部位
       description: 旋律効果など、一定範囲内の仲間に作用する効果を発動した際、一時攻撃力上昇効果を追加で付与する
-- name: 甲虫の擬態グループ防具スキル
+- name: 甲虫の擬態
   skills:
     - name: 忍び歩き
       condition: 3部位
       description: しゃがみ移動速度が上昇し、大型モンスターに見つかりにくくなる
-- name: 革細工の滑性グループ防具スキル
+- name: 革細工の滑性
   skills:
     - name: 滑走強化
       condition: 3部位
       description: 地形を利用したスライディングを行うと、一定時間会心率が上がる
-- name: 鱗重ねの工夫グループ防具スキル
+- name: 鱗重ねの工夫
   skills:
     - name: 奮起
       condition: 3部位
       description: 体力が40%以下になった時、一定時間スタミナの消費量が減少する
-- name: 毛皮の誘惑グループ防具スキル
+- name: 毛皮の誘惑
   skills:
     - name: 陽動
       condition: 3部位
       description: 攻撃を当てた時、モンスターの注意をより強くひくようになる
-- name: 護竜の守りグループ防具スキル
+- name: 護竜の守り
   skills:
     - name: 竜都の護り
       condition: 3部位
       description: 竜都の跡形にいると、属性ダメージや特殊ダメージが軽減される。
-- name: ヌシの憤激グループ防具スキル
+- name: ヌシの憤激
   skills:
     - name: 死中に活
       condition: 3部位
       description: 状態異常中、攻撃力が上昇する
-- name: 先達の導きグループ防具スキル
+- name: 先達の導き
   skills:
     - name: 探索者の幸運
       condition: 3部位
       description: 活性化している採取ポイントの 発生確率が上がる
-- name: 栄光の誉れグループ防具スキル
+- name: 栄光の誉れ
   skills:
     - name: 幸運
       condition: 3部位
       description: クエストのターゲット報酬が増える(クエストの途中からは発動しない)
-- name: 祝祭の巡りグループ防具スキル
+- name: 祝祭の巡り
   skills:
     - name: 剥ぎ取り名人
       condition: 3部位
       description: クエスト中、素材を剥ぎ取れる回数+1（クエストの途中からは発動しない）
-- name: ヌシの魂グループ防具スキル
+- name: ヌシの魂
   skills:
     - name: 根性【果敢】
       condition: 3部位
       description: 致命的な大ダメージを一度だけ軽減。発動前は攻撃力が上がり防御力が下がる。発動後は防御力と耐性値が上がる。
-- name: 拳を極めし者グループ防具スキル
+- name: 拳を極めし者
   skills:
     - name: 殺意の波動
       condition: 3部位
