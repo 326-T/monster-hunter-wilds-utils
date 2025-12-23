@@ -5,17 +5,17 @@
 @tailwind utilities;
 
 :root {
-  --background: 33 28% 95%;
-  --foreground: 22 12% 16%;
-  --card: 33 28% 98%;
-  --card-foreground: 22 12% 16%;
-  --muted: 32 22% 88%;
-  --muted-foreground: 24 10% 38%;
-  --accent: 18 48% 52%;
+  --background: 210 28% 96%;
+  --foreground: 215 28% 14%;
+  --card: 210 30% 98%;
+  --card-foreground: 215 28% 14%;
+  --muted: 210 18% 90%;
+  --muted-foreground: 215 12% 40%;
+  --accent: 198 74% 45%;
   --accent-foreground: 0 0% 100%;
-  --border: 28 18% 80%;
-  --ring: 20 40% 40%;
-  --input: 30 22% 90%;
+  --border: 210 18% 82%;
+  --ring: 198 60% 40%;
+  --input: 210 20% 92%;
 }
 
 * {
@@ -29,9 +29,9 @@ body {
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
   background-image:
-    radial-gradient(circle at 20% 20%, rgba(174, 116, 77, 0.16), transparent 45%),
-    radial-gradient(circle at 80% 0%, rgba(116, 96, 69, 0.18), transparent 40%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(246, 238, 224, 0.92));
+    radial-gradient(circle at 10% 15%, rgba(84, 118, 153, 0.2), transparent 45%),
+    radial-gradient(circle at 85% 0%, rgba(32, 72, 100, 0.16), transparent 40%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(226, 236, 248, 0.95));
   background-attachment: fixed;
 }
 
