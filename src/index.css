@@ -1,68 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+Antique:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: 33 28% 95%;
+  --foreground: 22 12% 16%;
+  --card: 33 28% 98%;
+  --card-foreground: 22 12% 16%;
+  --muted: 32 22% 88%;
+  --muted-foreground: 24 10% 38%;
+  --accent: 18 48% 52%;
+  --accent-foreground: 0 0% 100%;
+  --border: 28 18% 80%;
+  --ring: 20 40% 40%;
+  --input: 30 22% 90%;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
   min-height: 100vh;
+  font-family: "Zen Kaku Gothic Antique", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(174, 116, 77, 0.16), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(116, 96, 69, 0.18), transparent 40%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(246, 238, 224, 0.92));
+  background-attachment: fixed;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+h1,
+h2,
+h3,
+.heading-serif {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+  letter-spacing: 0.02em;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+#root {
+  min-height: 100vh;
 }
