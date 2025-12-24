@@ -186,21 +186,6 @@ export function SaveView({
 
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
-              <Label>グループスキル</Label>
-              <Select
-                value={groupSkill}
-                onChange={(event) => setGroupSkill(event.target.value)}
-                disabled={Boolean(optionsError)}
-              >
-                <option value="">選択してください</option>
-                {groupOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="grid gap-2">
               <Label>シリーズスキル</Label>
               <Select
                 value={seriesSkill}
@@ -209,6 +194,21 @@ export function SaveView({
               >
                 <option value="">選択してください</option>
                 {seriesOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>グループスキル</Label>
+              <Select
+                value={groupSkill}
+                onChange={(event) => setGroupSkill(event.target.value)}
+                disabled={Boolean(optionsError)}
+              >
+                <option value="">選択してください</option>
+                {groupOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -242,8 +242,8 @@ export function SaveView({
             <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">グループ</th>
-                  <th className="px-4 py-3">シリーズ</th>
+                <th className="px-4 py-3">シリーズ</th>
+                <th className="px-4 py-3">グループ</th>
                   <th className="px-4 py-3">お気に入り</th>
                   <th className="px-4 py-3">登録日時</th>
                 </tr>
@@ -270,8 +270,8 @@ export function SaveView({
                       )}
                     >
                       <td className="px-4 py-3">{entry.cursorId + 1}</td>
-                      <td className="px-4 py-3">{entry.groupSkill}</td>
-                      <td className="px-4 py-3">{entry.seriesSkill}</td>
+                    <td className="px-4 py-3">{entry.seriesSkill}</td>
+                    <td className="px-4 py-3">{entry.groupSkill}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Checkbox

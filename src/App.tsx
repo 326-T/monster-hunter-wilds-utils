@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { CursorView } from "./components/cursor/CursorView";
 import { SaveView } from "./components/save/SaveView";
 import { Button } from "./components/ui/button";
+import { VerifyView } from "./components/verify/VerifyView";
 import { useSkillOptions } from "./hooks/useSkillOptions";
 import { useTableState } from "./hooks/useTableState";
 
 function App() {
-	const [activeView, setActiveView] = useState<"save" | "cursor">("save");
+	const [activeView, setActiveView] = useState<"save" | "cursor" | "verify">(
+		"save",
+	);
 	const [showHeaderTitle, setShowHeaderTitle] = useState(true);
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
 	const { tables, cursorByAttribute, addEntry, toggleFavorite, advanceCursor } =
@@ -41,15 +44,23 @@ function App() {
 								<Button
 									variant={activeView === "save" ? "default" : "ghost"}
 									onClick={() => setActiveView("save")}
-									className="w-32 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
+									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
 									記録する
 								</Button>
 								<Button
+									variant={activeView === "verify" ? "default" : "ghost"}
+									onClick={() => setActiveView("verify")}
+									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
+									size="sm"
+								>
+									確認する
+								</Button>
+								<Button
 									variant={activeView === "cursor" ? "default" : "ghost"}
 									onClick={() => setActiveView("cursor")}
-									className="w-32 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
+									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
 									進める
@@ -63,7 +74,7 @@ function App() {
 				<div className="pointer-events-none absolute -top-32 right-10 h-72 w-72 rounded-full blur-3xl animate-float" />
 				<div className="pointer-events-none absolute bottom-[-120px] left-[-80px] h-80 w-80 rounded-full blur-3xl" />
 				<div className="mx-auto max-w-6xl px-6 py-10 lg:py-16">
-					{activeView === "save" ? (
+					{activeView === "save" && (
 						<SaveView
 							tables={tables}
 							cursorByAttribute={cursorByAttribute}
@@ -74,13 +85,15 @@ function App() {
 							onAddEntry={addEntry}
 							onToggleFavorite={toggleFavorite}
 						/>
-					) : (
+					)}
+					{activeView === "cursor" && (
 						<CursorView
 							tables={tables}
 							cursorByAttribute={cursorByAttribute}
 							onAdvanceCursor={advanceCursor}
 						/>
 					)}
+					{activeView === "verify" && <VerifyView tables={tables} />}
 				</div>
 			</div>
 		</div>
