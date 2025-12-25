@@ -20,6 +20,11 @@ type SaveViewProps = {
   optionsError: string
   onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => void
   onToggleFavorite: (tableKey: string, entryId: string, favorite: boolean) => void
+  onUpdateEntry: (
+    tableKey: string,
+    entryId: string,
+    updates: { groupSkill?: string; seriesSkill?: string },
+  ) => void
 }
 
 export function SaveView({
@@ -31,6 +36,7 @@ export function SaveView({
   optionsError,
   onAddEntry,
   onToggleFavorite,
+  onUpdateEntry,
 }: SaveViewProps) {
   const [selectedTableKey, setSelectedTableKey] = useState(allTables[0]?.key ?? '')
   const [weaponFilter, setWeaponFilter] = useState('all')
@@ -365,11 +371,11 @@ export function SaveView({
 
           <div className="overflow-x-auto rounded-2xl border border-border/60">
             <table className="w-full border-collapse text-sm">
-            <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">シリーズ</th>
-                <th className="px-4 py-3">グループ</th>
+                  <th className="px-4 py-3">シリーズ</th>
+                  <th className="px-4 py-3">グループ</th>
                   <th className="px-4 py-3">お気に入り</th>
                   <th className="px-4 py-3">登録日時</th>
                 </tr>
@@ -387,17 +393,57 @@ export function SaveView({
                 )}
                 {visibleEntries.map((entry) => {
                   const isPassed = entry.cursorId < currentCursor
+                  const seriesValue = seriesSelectOptions.includes(entry.seriesSkill)
+                    ? entry.seriesSkill
+                    : HIDDEN_SKILL_LABEL
+                  const groupValue = groupSelectOptions.includes(entry.groupSkill)
+                    ? entry.groupSkill
+                    : HIDDEN_SKILL_LABEL
                   return (
                     <tr
                       key={entry.id}
                       className={cn(
-                      'border-t border-border/50 bg-background',
+                        'border-t border-border/50 bg-background',
                         isPassed && 'text-muted-foreground',
                       )}
                     >
                       <td className="px-4 py-3">{entry.cursorId + 1}</td>
-                    <td className="px-4 py-3">{entry.seriesSkill}</td>
-                    <td className="px-4 py-3">{entry.groupSkill}</td>
+                      <td className="px-4 py-3">
+                        <Select
+                          value={seriesValue}
+                          onChange={(event) =>
+                            onUpdateEntry(selectedTableKey, entry.id, {
+                              seriesSkill: event.target.value,
+                            })
+                          }
+                          disabled={Boolean(optionsError)}
+                          className="h-9 text-xs"
+                        >
+                          {seriesSelectOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Select
+                          value={groupValue}
+                          onChange={(event) =>
+                            onUpdateEntry(selectedTableKey, entry.id, {
+                              groupSkill: event.target.value,
+                            })
+                          }
+                          disabled={Boolean(optionsError)}
+                          className="h-9 text-xs"
+                        >
+                          {groupSelectOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </Select>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Checkbox

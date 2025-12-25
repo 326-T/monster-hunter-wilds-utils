@@ -17,6 +17,7 @@ function App() {
 		cursor,
 		addEntry,
 		toggleFavorite,
+		updateEntry,
 		advanceCursor,
 		exportData,
 		importData,
@@ -91,6 +92,7 @@ function App() {
 							optionsError={error}
 							onAddEntry={addEntry}
 							onToggleFavorite={toggleFavorite}
+							onUpdateEntry={updateEntry}
 						/>
 					)}
 					{activeView === "cursor" && (

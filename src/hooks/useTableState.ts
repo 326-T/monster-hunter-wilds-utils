@@ -98,6 +98,22 @@ export function useTableState() {
     })
   }, [])
 
+  const updateEntry = useCallback(
+    (tableKey: string, entryId: string, updates: Partial<Pick<TableEntry, 'groupSkill' | 'seriesSkill'>>) => {
+      setTables((prev) => {
+        const target = prev[tableKey] ?? []
+        const nextEntries = target.map((entry) =>
+          entry.id === entryId ? { ...entry, ...updates } : entry,
+        )
+        return {
+          ...prev,
+          [tableKey]: nextEntries,
+        }
+      })
+    },
+    [],
+  )
+
   const advanceCursor = useCallback(() => {
     const cursorId = cursor
     const now = new Date().toISOString()
@@ -153,6 +169,7 @@ export function useTableState() {
     cursor,
     addEntry,
     toggleFavorite,
+    updateEntry,
     advanceCursor,
     exportData,
     importData,
