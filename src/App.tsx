@@ -14,7 +14,7 @@ function App() {
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
 	const {
 		tables,
-		cursorByAttribute,
+		cursor,
 		addEntry,
 		toggleFavorite,
 		advanceCursor,
@@ -84,7 +84,7 @@ function App() {
 					{activeView === "save" && (
 						<SaveView
 							tables={tables}
-							cursorByAttribute={cursorByAttribute}
+							cursor={cursor}
 							groupOptions={groupOptions}
 							seriesOptions={seriesOptions}
 							isLoadingOptions={isLoading}
@@ -96,7 +96,7 @@ function App() {
 					{activeView === "cursor" && (
 						<CursorView
 							tables={tables}
-							cursorByAttribute={cursorByAttribute}
+							cursor={cursor}
 							onAdvanceCursor={advanceCursor}
 						/>
 					)}

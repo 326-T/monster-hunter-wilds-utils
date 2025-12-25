@@ -40,26 +40,22 @@ const normalizeTableState = (state: StoredTableState): TableState => {
 }
 
 const normalizeCursorState = (value: unknown): CursorState => {
-  if (typeof value === 'number') {
-    return Object.fromEntries(ATTRIBUTES.map((attribute) => [attribute, value])) as CursorState
-  }
+  if (typeof value === 'number') return value
   if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).filter(
-      (entry): entry is [string, number] => typeof entry[1] === 'number',
+    const numbers = Object.values(value as Record<string, unknown>).filter(
+      (entry): entry is number => typeof entry === 'number',
     )
-    if (entries.length > 0) {
-      return Object.fromEntries(entries) as CursorState
-    }
+    if (numbers.length > 0) return Math.max(...numbers)
   }
-  return Object.fromEntries(ATTRIBUTES.map((attribute) => [attribute, 0])) as CursorState
+  return 0
 }
 
 export function useTableState() {
   const [tables, setTables] = useState<TableState>(() =>
     normalizeTableState(loadFromStorage<StoredTableState>(STORAGE_KEY, {})),
   )
-  const [cursorByAttribute, setCursorByAttribute] = useState<CursorState>(() =>
-    normalizeCursorState(loadFromStorage<unknown>(CURSOR_KEY, {})),
+  const [cursor, setCursor] = useState<CursorState>(() =>
+    normalizeCursorState(loadFromStorage<unknown>(CURSOR_KEY, 0)),
   )
 
   useEffect(() => {
@@ -67,8 +63,8 @@ export function useTableState() {
   }, [tables])
 
   useEffect(() => {
-    saveToStorage(CURSOR_KEY, cursorByAttribute)
-  }, [cursorByAttribute])
+    saveToStorage(CURSOR_KEY, cursor)
+  }, [cursor])
 
   const addEntry = useCallback((tableKey: string, groupSkill: string, seriesSkill: string) => {
     setTables((prev) => {
@@ -102,45 +98,42 @@ export function useTableState() {
     })
   }, [])
 
-  const advanceCursor = useCallback(
-    (attribute: string) => {
-      const cursorId = cursorByAttribute[attribute] ?? 0
-      const now = new Date().toISOString()
-      const attributeTables = allTables.filter((table) => table.attribute === attribute)
-      setTables((prev) => {
-        const next: TableState = { ...prev }
-        attributeTables.forEach((table) => {
-          const tableEntries = [...(next[table.key] ?? [])]
-          const hasCursorEntry = tableEntries.some((entry) => entry.cursorId === cursorId)
-          if (!hasCursorEntry) {
-            tableEntries.push({
-              id: createId(),
-              groupSkill: '不明',
-              seriesSkill: '不明',
-              favorite: false,
-              createdAt: now,
-              cursorId,
-            })
-          }
-          next[table.key] = tableEntries
-        })
-        return next
+  const advanceCursor = useCallback(() => {
+    const cursorId = cursor
+    const now = new Date().toISOString()
+    setTables((prev) => {
+      const next: TableState = { ...prev }
+      allTables.forEach((table) => {
+        const tableEntries = [...(next[table.key] ?? [])]
+        const hasCursorEntry = tableEntries.some((entry) => entry.cursorId === cursorId)
+        if (!hasCursorEntry) {
+          tableEntries.push({
+            id: createId(),
+            groupSkill: '不明',
+            seriesSkill: '不明',
+            favorite: false,
+            createdAt: now,
+            cursorId,
+          })
+        }
+        next[table.key] = tableEntries
       })
-      setCursorByAttribute((prev) => ({
-        ...prev,
-        [attribute]: cursorId + 1,
-      }))
-    },
-    [cursorByAttribute],
-  )
+      return next
+    })
+    setCursor(cursorId + 1)
+  }, [cursor])
 
   const exportData = useCallback(() => {
+    const cursorByAttribute = Object.fromEntries(
+      ATTRIBUTES.map((attribute) => [attribute, cursor]),
+    )
     return {
       version: 1,
       tables,
+      cursor,
       cursorByAttribute,
     }
-  }, [tables, cursorByAttribute])
+  }, [tables, cursor])
 
   const importData = useCallback((payload: unknown) => {
     if (!payload || typeof payload !== 'object') {
@@ -148,16 +141,16 @@ export function useTableState() {
     }
     const record = payload as Record<string, unknown>
     const nextTables = normalizeTableState((record.tables ?? record.data ?? {}) as StoredTableState)
-    const cursorSource = record.cursorByAttribute ?? record.cursor ?? record.cursorState ?? 0
+    const cursorSource = record.cursor ?? record.cursorState ?? record.cursorByAttribute ?? 0
     const nextCursor = normalizeCursorState(cursorSource)
     setTables(nextTables)
-    setCursorByAttribute(nextCursor)
+    setCursor(nextCursor)
     return { ok: true }
   }, [])
 
   return {
     tables,
-    cursorByAttribute,
+    cursor,
     addEntry,
     toggleFavorite,
     advanceCursor,

@@ -48,7 +48,7 @@ export type TableEntry = {
 
 export type TableState = Record<string, TableEntry[]>
 
-export type CursorState = Record<string, number>
+export type CursorState = number
 
 export const STORAGE_KEY = 'mhwu.tableEntries.v1'
 export const CURSOR_KEY = 'mhwu.attributeCursors.v1'

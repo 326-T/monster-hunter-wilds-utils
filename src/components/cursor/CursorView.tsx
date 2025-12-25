@@ -9,27 +9,24 @@ import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/sk
 
 type CursorViewProps = {
   tables: TableState
-  cursorByAttribute: CursorState
-  onAdvanceCursor: (attribute: string) => void
+  cursor: CursorState
+  onAdvanceCursor: () => void
 }
 
-export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: CursorViewProps) {
-  const [activeAttribute, setActiveAttribute] = useState(ATTRIBUTES[0] ?? '')
+export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps) {
   const [weaponFilter, setWeaponFilter] = useState('all')
+  const [attributeFilter, setAttributeFilter] = useState('all')
   const [intensifyFilter, setIntensifyFilter] = useState('all')
 
-  const attributeTables = useMemo(
-    () => allTables.filter((table) => table.attribute === activeAttribute),
-    [activeAttribute],
-  )
   const filteredAttributeTables = useMemo(() => {
-    return attributeTables.filter((table) => {
+    return allTables.filter((table) => {
       if (weaponFilter !== 'all' && table.weapon !== weaponFilter) return false
+      if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
       if (intensifyFilter !== 'all' && table.intensify !== intensifyFilter) return false
       return true
     })
-  }, [attributeTables, weaponFilter, intensifyFilter])
-  const activeCursor = cursorByAttribute[activeAttribute] ?? 0
+  }, [weaponFilter, attributeFilter, intensifyFilter])
+  const activeCursor = cursor
 
   const cursorCandidates = useMemo(() => {
     const candidates = filteredAttributeTables
@@ -54,33 +51,11 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
     <div className="flex flex-col gap-8">
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">属性タブ</CardTitle>
-          <CardDescription>カーソルを進める属性を選択</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 sm:grid-cols-1">
-          {ATTRIBUTES.map((attribute) => (
-            <Button
-              key={attribute}
-              variant={attribute === activeAttribute ? 'default' : 'ghost'}
-              className="w-full justify-between"
-              onClick={() => setActiveAttribute(attribute)}
-            >
-              <span>{attribute}</span>
-              <span className="text-xs text-muted-foreground">
-                cursor {cursorByAttribute[attribute] ?? 0}
-              </span>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="animate-fade-up">
-        <CardHeader>
           <CardTitle className="heading-serif">カーソル {activeCursor}</CardTitle>
           <CardDescription>NULL でない候補のみ表示。お気に入りを優先表示します。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label>武器</Label>
               <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
@@ -88,6 +63,20 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
                 {WEAPONS.map((weapon) => (
                   <option key={weapon} value={weapon}>
                     {weapon}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>属性</Label>
+              <Select
+                value={attributeFilter}
+                onChange={(event) => setAttributeFilter(event.target.value)}
+              >
+                <option value="all">すべて</option>
+                {ATTRIBUTES.map((attribute) => (
+                  <option key={attribute} value={attribute}>
+                    {attribute}
                   </option>
                 ))}
               </Select>
@@ -119,7 +108,7 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
               </div>
             )}
             {cursorCandidates.map(({ table, entry }) => (
-            <div key={table.key} className="rounded-2xl border border-border/50 bg-background p-4">
+              <div key={table.key} className="rounded-2xl border border-border/50 bg-background p-4">
                 <div className="grid gap-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -130,21 +119,21 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
                     </div>
                     {entry.favorite && <Badge>お気に入り</Badge>}
                   </div>
-                <div className="grid gap-2 text-sm">
-                  <div>
-                    <span className="text-xs text-muted-foreground">シリーズ</span>
-                    <div className="font-medium">{entry.seriesSkill}</div>
+                  <div className="grid gap-2 text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground">シリーズ</span>
+                      <div className="font-medium">{entry.seriesSkill}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">グループ</span>
+                      <div className="font-medium">{entry.groupSkill}</div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">グループ</span>
-                    <div className="font-medium">{entry.groupSkill}</div>
-                  </div>
-                </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
                       登録: {formatDate(entry.createdAt)}
                     </span>
-                    <Button size="sm" onClick={() => onAdvanceCursor(activeAttribute)}>
+                    <Button size="sm" onClick={onAdvanceCursor}>
                       この結果でカーソルを進める
                     </Button>
                   </div>
@@ -153,9 +142,9 @@ export function CursorView({ tables, cursorByAttribute, onAdvanceCursor }: Curso
             ))}
           </div>
 
-        <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
-          カーソルを進めると、同じ属性の NULL なテーブルはシリーズ/グループともに「不明」で埋めます。
-        </div>
+          <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
+            カーソルを進めると、NULL なテーブルはシリーズ/グループともに「不明」で埋めます。
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -10,7 +10,7 @@ import { cn } from '../../lib/utils'
 
 type SaveViewProps = {
   tables: TableState
-  cursorByAttribute: CursorState
+  cursor: CursorState
   groupOptions: string[]
   seriesOptions: string[]
   isLoadingOptions: boolean
@@ -21,7 +21,7 @@ type SaveViewProps = {
 
 export function SaveView({
   tables,
-  cursorByAttribute,
+  cursor,
   groupOptions,
   seriesOptions,
   isLoadingOptions,
@@ -66,7 +66,7 @@ export function SaveView({
   const selectedTable = allTables.find((table) => table.key === selectedTableKey) ?? allTables[0]
   const entries = tables[selectedTableKey] ?? []
   const sortedEntries = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-  const currentCursor = selectedTable ? cursorByAttribute[selectedTable.attribute] ?? 0 : 0
+  const currentCursor = selectedTable ? cursor : 0
   const visibleEntries = showPassed
     ? sortedEntries
     : sortedEntries.filter((entry) => entry.cursorId >= currentCursor)
