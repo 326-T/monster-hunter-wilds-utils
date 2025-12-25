@@ -94,6 +94,22 @@ export function SaveView({
     return [HIDDEN_SKILL_LABEL, ...visibleGroupOptions]
   }, [visibleGroupOptions])
 
+  const pickDefaultSkill = (hiddenCount: number, options: string[]) => {
+    if (hiddenCount > 0) return HIDDEN_SKILL_LABEL
+    if (options.includes('不明')) return '不明'
+    return options[0] ?? ''
+  }
+
+  useEffect(() => {
+    if (seriesSkill || seriesOptions.length === 0) return
+    setSeriesSkill(pickDefaultSkill(hiddenSeriesCount, seriesOptions))
+  }, [seriesSkill, seriesOptions, hiddenSeriesCount])
+
+  useEffect(() => {
+    if (groupSkill || groupOptions.length === 0) return
+    setGroupSkill(pickDefaultSkill(hiddenGroupCount, groupOptions))
+  }, [groupSkill, groupOptions, hiddenGroupCount])
+
   useEffect(() => {
     if (!seriesSkill || seriesSkill === HIDDEN_SKILL_LABEL) return
     if (!visibleSeriesSet.has(seriesSkill)) {

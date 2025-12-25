@@ -3,20 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, formatDate, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
-import type { TableState } from '../../lib/skills'
+import { allTables, ATTRIBUTES, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
+import type { TableEntry, TableRef, TableState } from '../../lib/skills'
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]))
-
-type VerifyRow = {
-  id: string
-  cursorId: number
-  tableLabel: string
-  groupSkill: string
-  seriesSkill: string
-  favorite: boolean
-  createdAt: string
-}
 
 type VerifyViewProps = {
   tables: TableState
@@ -31,34 +21,39 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
   const [importMessage, setImportMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const rows = useMemo(() => {
-    const list: VerifyRow[] = []
-    Object.entries(tables).forEach(([tableKey, entries]) => {
-      const tableMeta = tableMetaByKey.get(tableKey)
-      if (!tableMeta) return
-      if (weaponFilter !== 'all' && tableMeta.weapon !== weaponFilter) return
-      if (attributeFilter !== 'all' && tableMeta.attribute !== attributeFilter) return
-      if (intensifyFilter !== 'all' && tableMeta.intensify !== intensifyFilter) return
-      const tableLabel = tableMeta.label
-      entries.forEach((entry) => {
-        list.push({
-          id: entry.id,
-          cursorId: entry.cursorId,
-          tableLabel,
-          groupSkill: entry.groupSkill,
-          seriesSkill: entry.seriesSkill,
-          favorite: entry.favorite,
-          createdAt: entry.createdAt,
-        })
+  const filteredTables = useMemo(() => {
+    const keys = Object.keys(tables).filter((key) => (tables[key] ?? []).length > 0)
+    const metas = keys
+      .map((key) => tableMetaByKey.get(key))
+      .filter((table): table is TableRef => Boolean(table))
+      .filter((table) => {
+        if (weaponFilter !== 'all' && table.weapon !== weaponFilter) return false
+        if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
+        if (intensifyFilter !== 'all' && table.intensify !== intensifyFilter) return false
+        return true
       })
-    })
-    return list.sort((a, b) => {
-      if (a.cursorId !== b.cursorId) return a.cursorId - b.cursorId
-      const labelCompare = a.tableLabel.localeCompare(b.tableLabel, 'ja-JP')
-      if (labelCompare !== 0) return labelCompare
-      return a.createdAt.localeCompare(b.createdAt)
-    })
+    return metas.sort((a, b) => a.label.localeCompare(b.label, 'ja-JP'))
   }, [tables, weaponFilter, attributeFilter, intensifyFilter])
+
+  const entryMaps = useMemo(() => {
+    const map = new Map<string, Map<number, TableEntry>>()
+    filteredTables.forEach((table) => {
+      const entries = tables[table.key] ?? []
+      const cursorMap = new Map<number, TableEntry>()
+      entries.forEach((entry) => cursorMap.set(entry.cursorId, entry))
+      map.set(table.key, cursorMap)
+    })
+    return map
+  }, [filteredTables, tables])
+
+  const cursorIds = useMemo(() => {
+    const set = new Set<number>()
+    filteredTables.forEach((table) => {
+      const entries = tables[table.key] ?? []
+      entries.forEach((entry) => set.add(entry.cursorId))
+    })
+    return Array.from(set).sort((a, b) => a - b)
+  }, [filteredTables, tables])
 
   const handleExport = () => {
     const data = onExport()
@@ -160,38 +155,57 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
           </div>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>件数: {rows.length} 件</span>
+          <span>カーソル数: {cursorIds.length} 件</span>
+          <span>列数: {filteredTables.length} 件</span>
         </div>
         <div className="overflow-x-auto rounded-2xl border border-border/60">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">カーソル</th>
-                <th className="px-4 py-3">武器/属性/激化タイプ</th>
-                <th className="px-4 py-3">シリーズ</th>
-                <th className="px-4 py-3">グループ</th>
-                <th className="px-4 py-3">お気に入り</th>
-                <th className="px-4 py-3">登録日時</th>
+                {filteredTables.map((table) => (
+                  <th key={table.key} className="px-4 py-3">
+                    <div className="text-[11px] text-muted-foreground">
+                      {table.key}
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
+              {cursorIds.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  <td
+                    colSpan={Math.max(1, filteredTables.length + 1)}
+                    className="px-4 py-6 text-center text-sm text-muted-foreground"
+                  >
                     まだ記録がありません
                   </td>
                 </tr>
               )}
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-border/50 bg-background">
-                  <td className="px-4 py-3">{row.cursorId + 1}</td>
-                  <td className="px-4 py-3">{row.tableLabel}</td>
-                  <td className="px-4 py-3">{row.seriesSkill}</td>
-                  <td className="px-4 py-3">{row.groupSkill}</td>
-                  <td className="px-4 py-3">{row.favorite ? '✓' : ''}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {formatDate(row.createdAt)}
-                  </td>
+              {cursorIds.map((cursorId) => (
+                <tr key={cursorId} className="border-t border-border/50 bg-background">
+                  <td className="px-4 py-3">{cursorId + 1}</td>
+                  {filteredTables.map((table) => {
+                    const entry = entryMaps.get(table.key)?.get(cursorId)
+                    return (
+                      <td key={table.key} className="px-4 py-3 align-top">
+                        {entry ? (
+                          <div className="grid gap-1 rounded-lg border border-border/40 bg-background p-2 text-xs">
+                            <div className="text-muted-foreground">
+                              {entry.favorite ? 'お気に入り' : '通常'}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">シリーズ</div>
+                            <div className="text-sm font-medium">{entry.seriesSkill}</div>
+                            <div className="text-[11px] text-muted-foreground">グループ</div>
+                            <div className="text-sm font-medium">{entry.groupSkill}</div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
