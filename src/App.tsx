@@ -12,8 +12,15 @@ function App() {
 	);
 	const [showHeaderTitle, setShowHeaderTitle] = useState(true);
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
-	const { tables, cursorByAttribute, addEntry, toggleFavorite, advanceCursor } =
-		useTableState();
+	const {
+		tables,
+		cursorByAttribute,
+		addEntry,
+		toggleFavorite,
+		advanceCursor,
+		exportData,
+		importData,
+	} = useTableState();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -93,7 +100,9 @@ function App() {
 							onAdvanceCursor={advanceCursor}
 						/>
 					)}
-					{activeView === "verify" && <VerifyView tables={tables} />}
+					{activeView === "verify" && (
+						<VerifyView tables={tables} onExport={exportData} onImport={importData} />
+					)}
 				</div>
 			</div>
 		</div>

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
+import { Button } from '../ui/button'
 import { Select } from '../ui/select'
 import { allTables, ATTRIBUTES, formatDate, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
 import type { TableState } from '../../lib/skills'
@@ -19,12 +20,16 @@ type VerifyRow = {
 
 type VerifyViewProps = {
   tables: TableState
+  onExport: () => unknown
+  onImport: (payload: unknown) => { ok: boolean; message?: string }
 }
 
-export function VerifyView({ tables }: VerifyViewProps) {
+export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
   const [intensifyFilter, setIntensifyFilter] = useState('all')
+  const [importMessage, setImportMessage] = useState('')
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const rows = useMemo(() => {
     const list: VerifyRow[] = []
@@ -55,6 +60,35 @@ export function VerifyView({ tables }: VerifyViewProps) {
     })
   }, [tables, weaponFilter, attributeFilter, intensifyFilter])
 
+  const handleExport = () => {
+    const data = onExport()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    link.download = `mhwu-backup-${timestamp}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const payload = JSON.parse(text)
+      const result = onImport(payload)
+      setImportMessage(result.ok ? 'インポートしました。' : result.message ?? 'インポートに失敗しました。')
+    } catch {
+      setImportMessage('インポートに失敗しました。')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
   return (
     <Card className="animate-fade-up">
       <CardHeader>
@@ -62,6 +96,28 @@ export function VerifyView({ tables }: VerifyViewProps) {
         <CardDescription>保存済みの抽選結果を一覧で確認します。</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              エクスポート
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              インポート
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={handleImport}
+            />
+          </div>
+          {importMessage && <span className="text-xs text-muted-foreground">{importMessage}</span>}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label>武器</Label>
