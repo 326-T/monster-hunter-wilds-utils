@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
@@ -7,6 +7,9 @@ import { Select } from '../ui/select'
 import { allTables, ATTRIBUTES, formatDate, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
 import type { CursorState, TableState } from '../../lib/skills'
 import { cn } from '../../lib/utils'
+import { useSkillVisibility } from '../../hooks/useSkillVisibility'
+
+const HIDDEN_SKILL_LABEL = '非表示スキル'
 
 type SaveViewProps = {
   tables: TableState
@@ -36,6 +39,20 @@ export function SaveView({
   const [showPassed, setShowPassed] = useState(false)
   const [groupSkill, setGroupSkill] = useState('')
   const [seriesSkill, setSeriesSkill] = useState('')
+  const {
+    visibleGroupOptions,
+    visibleSeriesOptions,
+    visibleGroupSet,
+    visibleSeriesSet,
+    hiddenGroupCount,
+    hiddenSeriesCount,
+    toggleGroupVisibility,
+    toggleSeriesVisibility,
+    showAllGroup,
+    showAllSeries,
+    hideAllGroup,
+    hideAllSeries,
+  } = useSkillVisibility(groupOptions, seriesOptions)
 
   const filterTables = (weapon: string, attribute: string, intensify: string) =>
     allTables.filter((table) => {
@@ -70,6 +87,26 @@ export function SaveView({
   const visibleEntries = showPassed
     ? sortedEntries
     : sortedEntries.filter((entry) => entry.cursorId >= currentCursor)
+  const seriesSelectOptions = useMemo(() => {
+    return [HIDDEN_SKILL_LABEL, ...visibleSeriesOptions]
+  }, [visibleSeriesOptions])
+  const groupSelectOptions = useMemo(() => {
+    return [HIDDEN_SKILL_LABEL, ...visibleGroupOptions]
+  }, [visibleGroupOptions])
+
+  useEffect(() => {
+    if (!seriesSkill || seriesSkill === HIDDEN_SKILL_LABEL) return
+    if (!visibleSeriesSet.has(seriesSkill)) {
+      setSeriesSkill(HIDDEN_SKILL_LABEL)
+    }
+  }, [seriesSkill, visibleSeriesSet])
+
+  useEffect(() => {
+    if (!groupSkill || groupSkill === HIDDEN_SKILL_LABEL) return
+    if (!visibleGroupSet.has(groupSkill)) {
+      setGroupSkill(HIDDEN_SKILL_LABEL)
+    }
+  }, [groupSkill, visibleGroupSet])
 
   const handleAddEntry = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -184,6 +221,99 @@ export function SaveView({
             </div>
           </div>
 
+          <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold">表示スキル設定</div>
+              <span className="text-xs text-muted-foreground">
+                非表示は「{HIDDEN_SKILL_LABEL}」で記録
+              </span>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-semibold">シリーズスキル</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={showAllSeries}
+                    >
+                      すべて表示
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={hideAllSeries}
+                    >
+                      すべて非表示
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span>表示: {visibleSeriesOptions.length} 件</span>
+                  <span>全体: {seriesOptions.length} 件</span>
+                </div>
+                <div className="max-h-40 space-y-2 overflow-y-auto">
+                  {seriesOptions.length === 0 && (
+                    <div className="text-xs text-muted-foreground">選択肢がありません</div>
+                  )}
+                  {seriesOptions.map((option) => (
+                    <label key={option} className="flex items-center gap-2 text-xs">
+                      <Checkbox
+                        checked={visibleSeriesSet.has(option)}
+                        onChange={() => toggleSeriesVisibility(option)}
+                      />
+                      <span className="truncate">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-sm font-semibold">グループスキル</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={showAllGroup}
+                    >
+                      すべて表示
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={hideAllGroup}
+                    >
+                      すべて非表示
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span>表示: {visibleGroupOptions.length} 件</span>
+                  <span>全体: {groupOptions.length} 件</span>
+                </div>
+                <div className="max-h-40 space-y-2 overflow-y-auto">
+                  {groupOptions.length === 0 && (
+                    <div className="text-xs text-muted-foreground">選択肢がありません</div>
+                  )}
+                  {groupOptions.map((option) => (
+                    <label key={option} className="flex items-center gap-2 text-xs">
+                      <Checkbox
+                        checked={visibleGroupSet.has(option)}
+                        onChange={() => toggleGroupVisibility(option)}
+                      />
+                      <span className="truncate">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
               <Label>シリーズスキル</Label>
@@ -193,7 +323,7 @@ export function SaveView({
                 disabled={Boolean(optionsError)}
               >
                 <option value="">選択してください</option>
-                {seriesOptions.map((option) => (
+                {seriesSelectOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -208,7 +338,7 @@ export function SaveView({
                 disabled={Boolean(optionsError)}
               >
                 <option value="">選択してください</option>
-                {groupOptions.map((option) => (
+                {groupSelectOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
