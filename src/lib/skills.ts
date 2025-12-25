@@ -82,9 +82,51 @@ const ATTRIBUTE_EN_LABELS: Record<string, string> = {
   毒属性: 'Poison',
 }
 
-const SPECIAL_SKILL_EN_LABELS: Record<string, string> = {
+const SKILL_EN_LABELS: Record<string, string> = {
   [UNKNOWN_SKILL_LABEL]: 'Unknown',
   [HIDDEN_SKILL_LABEL]: 'Hidden Skill',
+  鱗張りの技法: 'Scale Plating Technique',
+  革細工の柔性: 'Leathercraft Flexibility',
+  毛皮の昂揚: 'Fur Exaltation',
+  甲虫の知らせ: 'Insect Tidings',
+  護竜の脈動: 'Guardian Dragon Pulse',
+  ヌシの誇り: 'Apex Pride',
+  甲虫の擬態: 'Insect Mimicry',
+  革細工の滑性: 'Leathercraft Smoothness',
+  鱗重ねの工夫: 'Layered Scale Craft',
+  毛皮の誘惑: 'Fur Temptation',
+  護竜の守り: 'Guardian Dragon Guard',
+  ヌシの憤激: 'Apex Fury',
+  先達の導き: "Pioneer's Guidance",
+  栄光の誉れ: 'Glorious Honor',
+  祝祭の巡り: 'Festival Cycle',
+  ヌシの魂: 'Apex Soul',
+  拳を極めし者: 'Fist Master',
+  闢獣の力: 'Power of the Cleaving Beast',
+  火竜の力: 'Power of the Fire Wyvern',
+  兇爪竜の力: 'Power of the Savage Claw Wyvern',
+  護鎖刃竜の命脈: 'Lifeblood of the Guarded Chainblade Wyvern',
+  波衣竜の守護: 'Protection of the Wave-Wrought Wyvern',
+  煌雷竜の力: 'Power of the Shining Thunder Wyvern',
+  雷顎竜の闘志: 'Fighting Spirit of the Thunderjaw Wyvern',
+  雪獅子の闘志: 'Fighting Spirit of the Snow Lion',
+  鎧竜の守護: 'Protection of the Armored Wyvern',
+  凍峰竜の反逆: 'Rebellion of the Frostpeak Wyvern',
+  暗器蛸の力: 'Power of the Dagger Octopus',
+  獄焔蛸の反逆: 'Rebellion of the Hellflame Octopus',
+  黒蝕竜の力: 'Power of the Black Eclipse Dragon',
+  鎖刃竜の飢餓: 'Hunger of the Chainblade Wyvern',
+  泡狐竜の力: 'Power of the Bubble Fox Wyvern',
+  白熾龍の脈動: 'Pulse of the White Incandescent Dragon',
+  花舞の祈り: 'Prayer of the Flower Dance',
+  千刃竜の闘志: 'Fighting Spirit of the Thousand Blade Wyvern',
+  海竜の渦雷: 'Whirlpool Thunder of the Sea Wyvern',
+  踊火の祈り: 'Prayer of the Dancing Flame',
+  暗黒騎士の証: 'Proof of the Dark Knight',
+  オメガレゾナンス: 'Omega Resonance',
+  夢灯の祈り: 'Prayer of the Dreamlight',
+  巨戟龍の黙示録: 'Apocalypse of the Giant Halberd Dragon',
+  祝謡の祈り: 'Prayer of the Festive Hymn',
 }
 
 export const makeTableKey = (weapon: string, attribute: string) => `${weapon}::${attribute}`
@@ -105,7 +147,7 @@ export const getAttributeLabel = (attribute: string, language: 'ja' | 'en') =>
   language === 'en' ? ATTRIBUTE_EN_LABELS[attribute] ?? attribute : attribute
 
 export const getSkillLabel = (skill: string, language: 'ja' | 'en') =>
-  language === 'en' ? SPECIAL_SKILL_EN_LABELS[skill] ?? skill : skill
+  language === 'en' ? SKILL_EN_LABELS[skill] ?? skill : skill
 
 export const getTableLabel = (
   table: Pick<TableRef, 'weapon' | 'attribute'>,

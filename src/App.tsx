@@ -5,7 +5,7 @@ import { Button } from "./components/ui/button";
 import { VerifyView } from "./components/verify/VerifyView";
 import { useSkillOptions } from "./hooks/useSkillOptions";
 import { useTableState } from "./hooks/useTableState";
-import { useI18n } from "./i18n";
+import { useTranslation } from "react-i18next";
 
 function App() {
 	const [activeView, setActiveView] = useState<"save" | "cursor" | "verify">(
@@ -13,7 +13,8 @@ function App() {
 	);
 	const [showHeaderTitle, setShowHeaderTitle] = useState(true);
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
-	const { language, setLanguage, t } = useI18n();
+	const { t, i18n } = useTranslation();
+	const language = i18n.language === "en" ? "en" : "ja";
 	const {
 		tables,
 		cursor,
@@ -53,7 +54,7 @@ function App() {
 							<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
 								<Button
 									variant={language === "ja" ? "default" : "ghost"}
-									onClick={() => setLanguage("ja")}
+									onClick={() => i18n.changeLanguage("ja")}
 									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
@@ -61,7 +62,7 @@ function App() {
 								</Button>
 								<Button
 									variant={language === "en" ? "default" : "ghost"}
-									onClick={() => setLanguage("en")}
+									onClick={() => i18n.changeLanguage("en")}
 									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>

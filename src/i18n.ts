@@ -1,0 +1,170 @@
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+const LANGUAGE_STORAGE_KEY = 'mhwu.language.v1'
+
+const resources = {
+  ja: {
+    translation: {
+      'app.title': '巨戟アーティア スキル抽選メモ',
+      'tab.record': '記録する',
+      'tab.verify': '確認する',
+      'tab.advance': '進める',
+      'language.ja': '日本語',
+      'language.en': '英語',
+      'common.all': 'すべて',
+      'common.select': '選択してください',
+      'common.open': '移動',
+      'common.favorite': 'お気に入り',
+      'common.hiddenSkill': '非表示スキル',
+      'common.unknown': '不明',
+      'common.matches': '一致: {count} 件',
+      'common.total': '全体: {count} 件',
+      'common.visible': '表示: {count} 件',
+      'common.noOptions': '選択肢がありません',
+      'common.noEntries': 'まだ記録がありません',
+      'common.loadingOptions': '選択肢を読み込み中...',
+      'save.tableList.title': 'テーブル一覧',
+      'save.tableList.description': '武器×属性のリンクから移動',
+      'save.noTables': '該当するテーブルがありません',
+      'save.record.title': '抽選結果を保存',
+      'save.record.description': 'テーブルごとに記録してお気に入りを管理',
+      'save.selectedTable': '選択中のテーブル',
+      'save.cursorPosition': 'カーソル位置: {value}',
+      'save.entryCount': '記録数: {count}',
+      'save.visibility.title': '表示スキル設定',
+      'save.visibility.note': '非表示は「{label}」で記録',
+      'save.seriesSkill': 'シリーズスキル',
+      'save.groupSkill': 'グループスキル',
+      'save.showAll': 'すべて表示',
+      'save.hideAll': 'すべて非表示',
+      'save.addEntry': 'このテーブルに追記する',
+      'save.passedNote': '通過済みはデフォルト非表示。必要なら表示を切り替えます。',
+      'save.showPassed': '通過済みを表示',
+      'save.hidePassed': '通過済みを非表示',
+      'save.headers.series': 'シリーズ',
+      'save.headers.group': 'グループ',
+      'save.headers.favorite': 'お気に入り',
+      'save.headers.createdAt': '登録日時',
+      'cursor.title': 'カーソル {value}',
+      'cursor.description': 'NULL でない候補のみ表示。お気に入りを優先表示します。',
+      'cursor.candidates': '表示候補: {count} 件',
+      'cursor.nullCount': 'NULL: {count} 件',
+      'cursor.noCandidates': 'このカーソルで表示できる候補がありません',
+      'cursor.addedAt': '登録: {value}',
+      'cursor.advanceButton': 'この結果でカーソルを進める',
+      'cursor.advanceNote':
+        'カーソルを進めると、NULL なテーブルはシリーズ/グループともに「{label}」で埋めます。',
+      'verify.title': '確認',
+      'verify.description': '保存済みの抽選結果を一覧で確認します。',
+      'verify.export': 'エクスポート',
+      'verify.import': 'インポート',
+      'verify.importSuccess': 'インポートしました。',
+      'verify.importError': 'インポートに失敗しました。',
+      'verify.invalidFile': '不正なファイル形式です。',
+      'verify.cursors': 'カーソル数: {count} 件',
+      'verify.columns': '列数: {count} 件',
+      'verify.header.cursor': 'カーソル',
+      'verify.favorite.add': 'お気に入りにする',
+      'verify.favorite.remove': 'お気に入りを外す',
+      'filter.weapon': '武器',
+      'filter.attribute': '属性',
+      'error.loadOptions': '選択肢の読み込みに失敗しました。',
+    },
+  },
+  en: {
+    translation: {
+      'app.title': 'Giant Halberd Artia Skill Draw Log',
+      'tab.record': 'Record',
+      'tab.verify': 'Review',
+      'tab.advance': 'Advance',
+      'language.ja': 'Japanese',
+      'language.en': 'English',
+      'common.all': 'All',
+      'common.select': 'Select',
+      'common.open': 'Open',
+      'common.favorite': 'Favorite',
+      'common.hiddenSkill': 'Hidden Skill',
+      'common.unknown': 'Unknown',
+      'common.matches': 'Matches: {count}',
+      'common.total': 'Total: {count}',
+      'common.visible': 'Visible: {count}',
+      'common.noOptions': 'No options',
+      'common.noEntries': 'No entries yet',
+      'common.loadingOptions': 'Loading options...',
+      'save.tableList.title': 'Table List',
+      'save.tableList.description': 'Navigate by weapon and attribute',
+      'save.noTables': 'No matching tables',
+      'save.record.title': 'Save Draw Results',
+      'save.record.description': 'Record per table and manage favorites',
+      'save.selectedTable': 'Selected Table',
+      'save.cursorPosition': 'Cursor: {value}',
+      'save.entryCount': 'Entries: {count}',
+      'save.visibility.title': 'Visible Skills',
+      'save.visibility.note': 'Hidden items are recorded as "{label}"',
+      'save.seriesSkill': 'Series Skill',
+      'save.groupSkill': 'Group Skill',
+      'save.showAll': 'Show all',
+      'save.hideAll': 'Hide all',
+      'save.addEntry': 'Add to this table',
+      'save.passedNote': 'Passed entries are hidden by default. Toggle to show them.',
+      'save.showPassed': 'Show passed',
+      'save.hidePassed': 'Hide passed',
+      'save.headers.series': 'Series',
+      'save.headers.group': 'Group',
+      'save.headers.favorite': 'Favorite',
+      'save.headers.createdAt': 'Created',
+      'cursor.title': 'Cursor {value}',
+      'cursor.description': 'Only non-NULL entries are shown. Favorites are prioritized.',
+      'cursor.candidates': 'Candidates: {count}',
+      'cursor.nullCount': 'NULL: {count}',
+      'cursor.noCandidates': 'No candidates for this cursor.',
+      'cursor.addedAt': 'Added: {value}',
+      'cursor.advanceButton': 'Advance with this result',
+      'cursor.advanceNote':
+        'When advancing, NULL tables are filled with "{label}" for both series and group.',
+      'verify.title': 'Review',
+      'verify.description': 'Review saved draw results.',
+      'verify.export': 'Export',
+      'verify.import': 'Import',
+      'verify.importSuccess': 'Imported.',
+      'verify.importError': 'Import failed.',
+      'verify.invalidFile': 'Invalid file format.',
+      'verify.cursors': 'Cursors: {count}',
+      'verify.columns': 'Columns: {count}',
+      'verify.header.cursor': 'Cursor',
+      'verify.favorite.add': 'Add favorite',
+      'verify.favorite.remove': 'Remove favorite',
+      'filter.weapon': 'Weapon',
+      'filter.attribute': 'Attribute',
+      'error.loadOptions': 'Failed to load options.',
+    },
+  },
+}
+
+const resolveInitialLanguage = () => {
+  if (typeof window === 'undefined') return 'ja'
+  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  return stored === 'en' ? 'en' : 'ja'
+}
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: resolveInitialLanguage(),
+  fallbackLng: 'ja',
+  interpolation: {
+    escapeValue: false,
+    prefix: '{',
+    suffix: '}',
+  },
+})
+
+if (typeof window !== 'undefined') {
+  i18n.on('languageChanged', (lng) => {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lng)
+    document.documentElement.lang = lng
+  })
+  document.documentElement.lang = i18n.language
+}
+
+export default i18n

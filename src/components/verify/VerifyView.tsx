@@ -14,7 +14,7 @@ import {
   WEAPONS,
 } from '../../lib/skills'
 import type { TableEntry, TableRef, TableState } from '../../lib/skills'
-import { useI18n } from '../../i18n'
+import { useTranslation } from 'react-i18next'
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]))
 
@@ -26,7 +26,8 @@ type VerifyViewProps = {
 }
 
 export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: VerifyViewProps) {
-  const { language, t } = useI18n()
+  const { t, i18n } = useTranslation()
+  const language = i18n.language === 'en' ? 'en' : 'ja'
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
   const [importMessageKey, setImportMessageKey] = useState('')

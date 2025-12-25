@@ -19,7 +19,7 @@ import {
 import type { CursorState, TableState } from '../../lib/skills'
 import { cn } from '../../lib/utils'
 import { useSkillVisibility } from '../../hooks/useSkillVisibility'
-import { useI18n } from '../../i18n'
+import { useTranslation } from 'react-i18next'
 
 type SaveViewProps = {
   tables: TableState
@@ -48,7 +48,8 @@ export function SaveView({
   onToggleFavorite,
   onUpdateEntry,
 }: SaveViewProps) {
-  const { language, t } = useI18n()
+  const { t, i18n } = useTranslation()
+  const language = i18n.language === 'en' ? 'en' : 'ja'
   const optionsErrorMessage = optionsError ? t('error.loadOptions') : ''
   const [selectedTableKey, setSelectedTableKey] = useState(allTables[0]?.key ?? '')
   const [weaponFilter, setWeaponFilter] = useState('all')

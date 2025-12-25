@@ -16,7 +16,7 @@ import {
   WEAPONS,
 } from '../../lib/skills'
 import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/skills'
-import { useI18n } from '../../i18n'
+import { useTranslation } from 'react-i18next'
 
 type CursorViewProps = {
   tables: TableState
@@ -25,7 +25,8 @@ type CursorViewProps = {
 }
 
 export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps) {
-  const { language, t } = useI18n()
+  const { t, i18n } = useTranslation()
+  const language = i18n.language === 'en' ? 'en' : 'ja'
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
 
