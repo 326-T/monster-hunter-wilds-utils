@@ -4,12 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Checkbox } from '../ui/checkbox'
 import { Label } from '../ui/label'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, formatDate, WEAPONS } from '../../lib/skills'
+import {
+  allTables,
+  ATTRIBUTES,
+  formatDate,
+  getAttributeLabel,
+  getSkillLabel,
+  getTableLabel,
+  getWeaponLabel,
+  HIDDEN_SKILL_LABEL,
+  UNKNOWN_SKILL_LABEL,
+  WEAPONS,
+} from '../../lib/skills'
 import type { CursorState, TableState } from '../../lib/skills'
 import { cn } from '../../lib/utils'
 import { useSkillVisibility } from '../../hooks/useSkillVisibility'
-
-const HIDDEN_SKILL_LABEL = '非表示スキル'
+import { useI18n } from '../../i18n'
 
 type SaveViewProps = {
   tables: TableState
@@ -17,7 +27,7 @@ type SaveViewProps = {
   groupOptions: string[]
   seriesOptions: string[]
   isLoadingOptions: boolean
-  optionsError: string
+  optionsError: '' | 'loadOptions'
   onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => void
   onToggleFavorite: (tableKey: string, entryId: string, favorite: boolean) => void
   onUpdateEntry: (
@@ -38,6 +48,8 @@ export function SaveView({
   onToggleFavorite,
   onUpdateEntry,
 }: SaveViewProps) {
+  const { language, t } = useI18n()
+  const optionsErrorMessage = optionsError ? t('error.loadOptions') : ''
   const [selectedTableKey, setSelectedTableKey] = useState(allTables[0]?.key ?? '')
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
@@ -98,7 +110,7 @@ export function SaveView({
 
   const pickDefaultSkill = (hiddenCount: number, options: string[]) => {
     if (hiddenCount > 0) return HIDDEN_SKILL_LABEL
-    if (options.includes('不明')) return '不明'
+    if (options.includes(UNKNOWN_SKILL_LABEL)) return UNKNOWN_SKILL_LABEL
     return options[0] ?? ''
   }
 
@@ -138,48 +150,48 @@ export function SaveView({
     <div className="flex flex-col gap-8">
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">テーブル一覧</CardTitle>
-          <CardDescription>武器×属性のリンクから移動</CardDescription>
+          <CardTitle className="heading-serif">{t('save.tableList.title')}</CardTitle>
+          <CardDescription>{t('save.tableList.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
             <div className="space-y-2">
-              <Label>武器</Label>
+              <Label>{t('filter.weapon')}</Label>
               <Select
                 value={weaponFilter}
                 onChange={(event) => updateFilters({ weapon: event.target.value })}
               >
-                <option value="all">すべて</option>
+                <option value="all">{t('common.all')}</option>
                 {WEAPONS.map((weapon) => (
                   <option key={weapon} value={weapon}>
-                    {weapon}
+                    {getWeaponLabel(weapon, language)}
                   </option>
                 ))}
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>属性</Label>
+              <Label>{t('filter.attribute')}</Label>
               <Select
                 value={attributeFilter}
                 onChange={(event) => updateFilters({ attribute: event.target.value })}
               >
-                <option value="all">すべて</option>
+                <option value="all">{t('common.all')}</option>
                 {ATTRIBUTES.map((attribute) => (
                   <option key={attribute} value={attribute}>
-                    {attribute}
+                    {getAttributeLabel(attribute, language)}
                   </option>
                 ))}
               </Select>
             </div>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>一致: {filteredTables.length} 件</span>
-            <span>全体: {allTables.length} 件</span>
+            <span>{t('common.matches', { count: filteredTables.length })}</span>
+            <span>{t('common.total', { count: allTables.length })}</span>
           </div>
           <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1 sm:max-h-[360px]">
             {filteredTables.length === 0 && (
               <div className="rounded-lg border border-dashed border-border/60 p-4 text-center text-sm text-muted-foreground">
-                該当するテーブルがありません
+                {t('save.noTables')}
               </div>
             )}
             {filteredTables.map((table) => {
@@ -195,10 +207,14 @@ export function SaveView({
                   onClick={() => setSelectedTableKey(table.key)}
                 >
                   <div>
-                    <div className="text-sm font-semibold">{table.weapon}</div>
-                    <div className="text-xs text-muted-foreground">{table.attribute}</div>
+                    <div className="text-sm font-semibold">
+                      {getWeaponLabel(table.weapon, language)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {getAttributeLabel(table.attribute, language)}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">移動</span>
+                  <span className="text-xs text-muted-foreground">{t('common.open')}</span>
                 </Button>
               )
             })}
@@ -208,32 +224,36 @@ export function SaveView({
 
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">抽選結果を保存</CardTitle>
-          <CardDescription>テーブルごとに記録してお気に入りを管理</CardDescription>
+          <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
+          <CardDescription>{t('save.record.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="rounded-2xl border border-border/40 bg-background p-4">
             <div className="flex flex-col gap-2">
-              <div className="text-xs text-muted-foreground">選択中のテーブル</div>
-              <div className="text-lg font-semibold">{selectedTable?.label}</div>
+              <div className="text-xs text-muted-foreground">{t('save.selectedTable')}</div>
+              <div className="text-lg font-semibold">
+                {selectedTable ? getTableLabel(selectedTable, language) : ''}
+              </div>
               <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>カーソル位置: {currentCursor}</span>
-                <span>記録数: {sortedEntries.length}</span>
+                <span>{t('save.cursorPosition', { value: currentCursor })}</span>
+                <span>{t('save.entryCount', { count: sortedEntries.length })}</span>
               </div>
             </div>
           </div>
 
           <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-semibold">表示スキル設定</div>
+              <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
               <span className="text-xs text-muted-foreground">
-                非表示は「{HIDDEN_SKILL_LABEL}」で記録
+                {t('save.visibility.note', {
+                  label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
+                })}
               </span>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">シリーズスキル</div>
+                  <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
@@ -241,7 +261,7 @@ export function SaveView({
                       className="h-8 px-3 text-xs"
                       onClick={showAllSeries}
                     >
-                      すべて表示
+                      {t('save.showAll')}
                     </Button>
                     <Button
                       variant="outline"
@@ -249,17 +269,17 @@ export function SaveView({
                       className="h-8 px-3 text-xs"
                       onClick={hideAllSeries}
                     >
-                      すべて非表示
+                      {t('save.hideAll')}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>表示: {visibleSeriesOptions.length} 件</span>
-                  <span>全体: {seriesOptions.length} 件</span>
+                  <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
+                  <span>{t('common.total', { count: seriesOptions.length })}</span>
                 </div>
                 <div className="max-h-40 space-y-2 overflow-y-auto">
                   {seriesOptions.length === 0 && (
-                    <div className="text-xs text-muted-foreground">選択肢がありません</div>
+                    <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
                   )}
                   {seriesOptions.map((option) => (
                     <label key={option} className="flex items-center gap-2 text-xs">
@@ -267,14 +287,14 @@ export function SaveView({
                         checked={visibleSeriesSet.has(option)}
                         onChange={() => toggleSeriesVisibility(option)}
                       />
-                      <span className="truncate">{option}</span>
+                      <span className="truncate">{getSkillLabel(option, language)}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">グループスキル</div>
+                  <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
@@ -282,7 +302,7 @@ export function SaveView({
                       className="h-8 px-3 text-xs"
                       onClick={showAllGroup}
                     >
-                      すべて表示
+                      {t('save.showAll')}
                     </Button>
                     <Button
                       variant="outline"
@@ -290,17 +310,17 @@ export function SaveView({
                       className="h-8 px-3 text-xs"
                       onClick={hideAllGroup}
                     >
-                      すべて非表示
+                      {t('save.hideAll')}
                     </Button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>表示: {visibleGroupOptions.length} 件</span>
-                  <span>全体: {groupOptions.length} 件</span>
+                  <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
+                  <span>{t('common.total', { count: groupOptions.length })}</span>
                 </div>
                 <div className="max-h-40 space-y-2 overflow-y-auto">
                   {groupOptions.length === 0 && (
-                    <div className="text-xs text-muted-foreground">選択肢がありません</div>
+                    <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
                   )}
                   {groupOptions.map((option) => (
                     <label key={option} className="flex items-center gap-2 text-xs">
@@ -308,7 +328,7 @@ export function SaveView({
                         checked={visibleGroupSet.has(option)}
                         onChange={() => toggleGroupVisibility(option)}
                       />
-                      <span className="truncate">{option}</span>
+                      <span className="truncate">{getSkillLabel(option, language)}</span>
                     </label>
                   ))}
                 </div>
@@ -318,54 +338,54 @@ export function SaveView({
 
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
-              <Label>シリーズスキル</Label>
+              <Label>{t('save.seriesSkill')}</Label>
               <Select
                 value={seriesSkill}
                 onChange={(event) => setSeriesSkill(event.target.value)}
                 disabled={Boolean(optionsError)}
               >
-                <option value="">選択してください</option>
+                <option value="">{t('common.select')}</option>
                 {seriesSelectOptions.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {getSkillLabel(option, language)}
                   </option>
                 ))}
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>グループスキル</Label>
+              <Label>{t('save.groupSkill')}</Label>
               <Select
                 value={groupSkill}
                 onChange={(event) => setGroupSkill(event.target.value)}
                 disabled={Boolean(optionsError)}
               >
-                <option value="">選択してください</option>
+                <option value="">{t('common.select')}</option>
                 {groupSelectOptions.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {getSkillLabel(option, language)}
                   </option>
                 ))}
               </Select>
             </div>
             {!optionsError && isLoadingOptions && (
-              <div className="text-xs text-muted-foreground">選択肢を読み込み中...</div>
+              <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>
             )}
             {optionsError && (
               <div className="rounded-lg border border-dashed border-border/60 bg-background p-3 text-xs text-muted-foreground">
-                {optionsError}
+                {optionsErrorMessage}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={!groupSkill || !seriesSkill}>
-              このテーブルに追記する
+              {t('save.addEntry')}
             </Button>
           </form>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm text-muted-foreground">
-              通過済みはデフォルト非表示。必要なら表示を切り替えます。
+              {t('save.passedNote')}
             </div>
             <Button variant="outline" size="sm" onClick={() => setShowPassed((prev) => !prev)}>
-              {showPassed ? '通過済みを非表示' : '通過済みを表示'}
+              {showPassed ? t('save.hidePassed') : t('save.showPassed')}
             </Button>
           </div>
 
@@ -374,10 +394,10 @@ export function SaveView({
               <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">シリーズ</th>
-                  <th className="px-4 py-3">グループ</th>
-                  <th className="px-4 py-3">お気に入り</th>
-                  <th className="px-4 py-3">登録日時</th>
+                  <th className="px-4 py-3">{t('save.headers.series')}</th>
+                  <th className="px-4 py-3">{t('save.headers.group')}</th>
+                  <th className="px-4 py-3">{t('save.headers.favorite')}</th>
+                  <th className="px-4 py-3">{t('save.headers.createdAt')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -387,7 +407,7 @@ export function SaveView({
                       colSpan={5}
                       className="px-4 py-6 text-center text-sm text-muted-foreground"
                     >
-                      まだ記録がありません
+                      {t('common.noEntries')}
                     </td>
                   </tr>
                 )}
@@ -421,7 +441,7 @@ export function SaveView({
                         >
                           {seriesSelectOptions.map((option) => (
                             <option key={option} value={option}>
-                              {option}
+                              {getSkillLabel(option, language)}
                             </option>
                           ))}
                         </Select>
@@ -439,7 +459,7 @@ export function SaveView({
                         >
                           {groupSelectOptions.map((option) => (
                             <option key={option} value={option}>
-                              {option}
+                              {getSkillLabel(option, language)}
                             </option>
                           ))}
                         </Select>
@@ -452,11 +472,11 @@ export function SaveView({
                               onToggleFavorite(selectedTableKey, entry.id, event.target.checked)
                             }
                           />
-                          <span className="text-xs">{entry.favorite ? 'お気に入り' : ''}</span>
+                          <span className="text-xs">{entry.favorite ? t('common.favorite') : ''}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {formatDate(entry.createdAt)}
+                        {formatDate(entry.createdAt, language)}
                       </td>
                     </tr>
                   )

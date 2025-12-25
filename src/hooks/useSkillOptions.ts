@@ -4,7 +4,7 @@ type SkillOptionsState = {
   groupOptions: string[]
   seriesOptions: string[]
   isLoading: boolean
-  error: string
+  error: '' | 'loadOptions'
 }
 
 export function useSkillOptions(): SkillOptionsState {
@@ -39,7 +39,7 @@ export function useSkillOptions(): SkillOptionsState {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          error: '選択肢の読み込みに失敗しました。',
+          error: 'loadOptions',
         }))
       }
     }

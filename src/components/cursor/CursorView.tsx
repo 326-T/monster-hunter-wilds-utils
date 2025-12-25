@@ -4,8 +4,19 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, formatDate, WEAPONS } from '../../lib/skills'
+import {
+  allTables,
+  ATTRIBUTES,
+  formatDate,
+  getAttributeLabel,
+  getSkillLabel,
+  getTableLabel,
+  getWeaponLabel,
+  UNKNOWN_SKILL_LABEL,
+  WEAPONS,
+} from '../../lib/skills'
 import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/skills'
+import { useI18n } from '../../i18n'
 
 type CursorViewProps = {
   tables: TableState
@@ -14,6 +25,7 @@ type CursorViewProps = {
 }
 
 export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps) {
+  const { language, t } = useI18n()
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
 
@@ -39,9 +51,11 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
       if (a.entry.favorite !== b.entry.favorite) {
         return a.entry.favorite ? -1 : 1
       }
-      return a.table.label.localeCompare(b.table.label, 'ja-JP')
+      const aLabel = getTableLabel(a.table, language)
+      const bLabel = getTableLabel(b.table, language)
+      return aLabel.localeCompare(bLabel, language === 'en' ? 'en-US' : 'ja-JP')
     })
-  }, [filteredAttributeTables, tables, activeCursor])
+  }, [filteredAttributeTables, tables, activeCursor, language])
 
   const nullCount = filteredAttributeTables.length - cursorCandidates.length
 
@@ -49,46 +63,48 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
     <div className="flex flex-col gap-8">
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">カーソル {activeCursor}</CardTitle>
-          <CardDescription>NULL でない候補のみ表示。お気に入りを優先表示します。</CardDescription>
+          <CardTitle className="heading-serif">
+            {t('cursor.title', { value: activeCursor })}
+          </CardTitle>
+          <CardDescription>{t('cursor.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>武器</Label>
+              <Label>{t('filter.weapon')}</Label>
               <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
-                <option value="all">すべて</option>
+                <option value="all">{t('common.all')}</option>
                 {WEAPONS.map((weapon) => (
                   <option key={weapon} value={weapon}>
-                    {weapon}
+                    {getWeaponLabel(weapon, language)}
                   </option>
                 ))}
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-              <Label>属性</Label>
+              <Label>{t('filter.attribute')}</Label>
               <Select
                 value={attributeFilter}
                 onChange={(event) => setAttributeFilter(event.target.value)}
               >
-                <option value="all">すべて</option>
+                <option value="all">{t('common.all')}</option>
                 {ATTRIBUTES.map((attribute) => (
                   <option key={attribute} value={attribute}>
-                    {attribute}
+                    {getAttributeLabel(attribute, language)}
                   </option>
                 ))}
               </Select>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>表示候補: {cursorCandidates.length} 件</span>
-            <span>NULL: {nullCount} 件</span>
+            <span>{t('cursor.candidates', { count: cursorCandidates.length })}</span>
+            <span>{t('cursor.nullCount', { count: nullCount })}</span>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             {cursorCandidates.length === 0 && (
               <div className="rounded-xl border border-dashed border-border/60 bg-background p-6 text-center text-sm text-muted-foreground">
-                このカーソルで表示できる候補がありません
+                {t('cursor.noCandidates')}
               </div>
             )}
             {cursorCandidates.map(({ table, entry }) => (
@@ -96,27 +112,35 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
                 <div className="grid gap-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="text-sm font-semibold">{table.weapon}</div>
-                      <div className="text-xs text-muted-foreground">{table.attribute}</div>
+                      <div className="text-sm font-semibold">
+                        {getWeaponLabel(table.weapon, language)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {getAttributeLabel(table.attribute, language)}
+                      </div>
                     </div>
-                    {entry.favorite && <Badge>お気に入り</Badge>}
+                    {entry.favorite && <Badge>{t('common.favorite')}</Badge>}
                   </div>
                   <div className="grid gap-2 text-sm">
                     <div>
-                      <span className="text-xs text-muted-foreground">シリーズ</span>
-                      <div className="font-medium">{entry.seriesSkill}</div>
+                      <span className="text-xs text-muted-foreground">{t('save.headers.series')}</span>
+                      <div className="font-medium">
+                        {getSkillLabel(entry.seriesSkill, language)}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground">グループ</span>
-                      <div className="font-medium">{entry.groupSkill}</div>
+                      <span className="text-xs text-muted-foreground">{t('save.headers.group')}</span>
+                      <div className="font-medium">{getSkillLabel(entry.groupSkill, language)}</div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
-                      登録: {formatDate(entry.createdAt)}
+                      {t('cursor.addedAt', {
+                        value: formatDate(entry.createdAt, language),
+                      })}
                     </span>
                     <Button size="sm" onClick={onAdvanceCursor}>
-                      この結果でカーソルを進める
+                      {t('cursor.advanceButton')}
                     </Button>
                   </div>
                 </div>
@@ -125,7 +149,9 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
           </div>
 
           <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
-            カーソルを進めると、NULL なテーブルはシリーズ/グループともに「不明」で埋めます。
+            {t('cursor.advanceNote', {
+              label: getSkillLabel(UNKNOWN_SKILL_LABEL, language),
+            })}
           </div>
         </CardContent>
       </Card>

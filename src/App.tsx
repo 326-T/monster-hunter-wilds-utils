@@ -5,6 +5,7 @@ import { Button } from "./components/ui/button";
 import { VerifyView } from "./components/verify/VerifyView";
 import { useSkillOptions } from "./hooks/useSkillOptions";
 import { useTableState } from "./hooks/useTableState";
+import { useI18n } from "./i18n";
 
 function App() {
 	const [activeView, setActiveView] = useState<"save" | "cursor" | "verify">(
@@ -12,6 +13,7 @@ function App() {
 	);
 	const [showHeaderTitle, setShowHeaderTitle] = useState(true);
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
+	const { language, setLanguage, t } = useI18n();
 	const {
 		tables,
 		cursor,
@@ -44,8 +46,28 @@ function App() {
 							aria-hidden={!showHeaderTitle}
 						>
 							<h1 className="text-lg font-semibold heading-serif sm:text-xl">
-								巨戟アーティア スキル抽選メモ
+								{t("app.title")}
 							</h1>
+						</div>
+						<div className="flex justify-center">
+							<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
+								<Button
+									variant={language === "ja" ? "default" : "ghost"}
+									onClick={() => setLanguage("ja")}
+									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+									size="sm"
+								>
+									{t("language.ja")}
+								</Button>
+								<Button
+									variant={language === "en" ? "default" : "ghost"}
+									onClick={() => setLanguage("en")}
+									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+									size="sm"
+								>
+									{t("language.en")}
+								</Button>
+							</div>
 						</div>
 						<div className="flex justify-center">
 							<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
@@ -55,7 +77,7 @@ function App() {
 									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
-									記録する
+									{t("tab.record")}
 								</Button>
 								<Button
 									variant={activeView === "verify" ? "default" : "ghost"}
@@ -63,7 +85,7 @@ function App() {
 									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
-									確認する
+									{t("tab.verify")}
 								</Button>
 								<Button
 									variant={activeView === "cursor" ? "default" : "ghost"}
@@ -71,7 +93,7 @@ function App() {
 									className="w-28 rounded-none px-5 first:rounded-l-full last:rounded-r-full"
 									size="sm"
 								>
-									進める
+									{t("tab.advance")}
 								</Button>
 							</div>
 						</div>

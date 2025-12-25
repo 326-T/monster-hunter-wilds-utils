@@ -3,22 +3,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, WEAPONS } from '../../lib/skills'
+import {
+  allTables,
+  ATTRIBUTES,
+  getAttributeLabel,
+  getSkillLabel,
+  getTableKeyLabel,
+  getTableLabel,
+  getWeaponLabel,
+  WEAPONS,
+} from '../../lib/skills'
 import type { TableEntry, TableRef, TableState } from '../../lib/skills'
+import { useI18n } from '../../i18n'
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]))
 
 type VerifyViewProps = {
   tables: TableState
   onExport: () => unknown
-  onImport: (payload: unknown) => { ok: boolean; message?: string }
+  onImport: (payload: unknown) => { ok: boolean; messageKey?: string }
   onToggleFavorite: (tableKey: string, entryId: string, favorite: boolean) => void
 }
 
 export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: VerifyViewProps) {
+  const { language, t } = useI18n()
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
-  const [importMessage, setImportMessage] = useState('')
+  const [importMessageKey, setImportMessageKey] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const filteredTables = useMemo(() => {
@@ -31,8 +42,12 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
         if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
         return true
       })
-    return metas.sort((a, b) => a.label.localeCompare(b.label, 'ja-JP'))
-  }, [tables, weaponFilter, attributeFilter])
+    return metas.sort((a, b) => {
+      const aLabel = getTableLabel(a, language)
+      const bLabel = getTableLabel(b, language)
+      return aLabel.localeCompare(bLabel, language === 'en' ? 'en-US' : 'ja-JP')
+    })
+  }, [tables, weaponFilter, attributeFilter, language])
 
   const entryMaps = useMemo(() => {
     const map = new Map<string, Map<number, TableEntry>>()
@@ -75,9 +90,11 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
       const text = await file.text()
       const payload = JSON.parse(text)
       const result = onImport(payload)
-      setImportMessage(result.ok ? 'インポートしました。' : result.message ?? 'インポートに失敗しました。')
+      setImportMessageKey(
+        result.ok ? 'verify.importSuccess' : result.messageKey ?? 'verify.importError',
+      )
     } catch {
-      setImportMessage('インポートに失敗しました。')
+      setImportMessageKey('verify.importError')
     } finally {
       event.target.value = ''
     }
@@ -86,21 +103,21 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
   return (
     <Card className="animate-fade-up">
       <CardHeader>
-        <CardTitle className="heading-serif">確認</CardTitle>
-        <CardDescription>保存済みの抽選結果を一覧で確認します。</CardDescription>
+        <CardTitle className="heading-serif">{t('verify.title')}</CardTitle>
+        <CardDescription>{t('verify.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={handleExport}>
-              エクスポート
+              {t('verify.export')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
             >
-              インポート
+              {t('verify.import')}
             </Button>
             <input
               ref={fileInputRef}
@@ -110,59 +127,63 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
               onChange={handleImport}
             />
           </div>
-          {importMessage && <span className="text-xs text-muted-foreground">{importMessage}</span>}
+          {importMessageKey && (
+            <span className="text-xs text-muted-foreground">{t(importMessageKey)}</span>
+          )}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>武器</Label>
+            <Label>{t('filter.weapon')}</Label>
             <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
-              <option value="all">すべて</option>
+              <option value="all">{t('common.all')}</option>
               {WEAPONS.map((weapon) => (
                 <option key={weapon} value={weapon}>
-                  {weapon}
+                  {getWeaponLabel(weapon, language)}
                 </option>
               ))}
             </Select>
           </div>
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-            <Label>属性</Label>
+            <Label>{t('filter.attribute')}</Label>
             <Select
               value={attributeFilter}
               onChange={(event) => setAttributeFilter(event.target.value)}
             >
-              <option value="all">すべて</option>
+              <option value="all">{t('common.all')}</option>
               {ATTRIBUTES.map((attribute) => (
                 <option key={attribute} value={attribute}>
-                  {attribute}
+                  {getAttributeLabel(attribute, language)}
                 </option>
               ))}
             </Select>
           </div>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>カーソル数: {cursorIds.length} 件</span>
-          <span>列数: {filteredTables.length} 件</span>
+          <span>{t('verify.cursors', { count: cursorIds.length })}</span>
+          <span>{t('verify.columns', { count: filteredTables.length })}</span>
         </div>
         <div className="overflow-x-auto rounded-2xl border border-border/60">
           <table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
             <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">カーソル</th>
+                <th className="px-4 py-3">{t('verify.header.cursor')}</th>
                 {filteredTables.map((table) => (
-                <th key={table.key} className="px-3 py-2">
-                  <div className="text-[10px] text-muted-foreground">{table.key}</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+                  <th key={table.key} className="px-3 py-2">
+                    <div className="text-[10px] text-muted-foreground">
+                      {getTableKeyLabel(table, language)}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
               {cursorIds.length === 0 && (
                 <tr>
                   <td
                     colSpan={Math.max(1, filteredTables.length + 1)}
                     className="px-4 py-6 text-center text-sm text-muted-foreground"
                   >
-                    まだ記録がありません
+                    {t('common.noEntries')}
                   </td>
                 </tr>
               )}
@@ -182,12 +203,24 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
                                 ? 'border-amber-200 bg-amber-50/70 text-amber-900'
                                 : 'border-border/40 bg-background hover:border-border/70 hover:bg-muted/40'
                             }`}
-                            title={entry.favorite ? 'お気に入りを外す' : 'お気に入りにする'}
+                            title={
+                              entry.favorite
+                                ? t('verify.favorite.remove')
+                                : t('verify.favorite.add')
+                            }
                           >
-                            <div className="text-[11px] text-muted-foreground">シリーズ</div>
-                            <div className="text-[11px] font-medium">{entry.seriesSkill}</div>
-                            <div className="text-[11px] text-muted-foreground">グループ</div>
-                            <div className="text-[11px] font-medium">{entry.groupSkill}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {t('save.headers.series')}
+                            </div>
+                            <div className="text-[11px] font-medium">
+                              {getSkillLabel(entry.seriesSkill, language)}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {t('save.headers.group')}
+                            </div>
+                            <div className="text-[11px] font-medium">
+                              {getSkillLabel(entry.groupSkill, language)}
+                            </div>
                           </button>
                         ) : (
                           <span className="text-[10px] text-muted-foreground">-</span>

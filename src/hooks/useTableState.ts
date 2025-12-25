@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { allTables, ATTRIBUTES, createId, CURSOR_KEY, STORAGE_KEY } from '../lib/skills'
+import {
+  allTables,
+  ATTRIBUTES,
+  createId,
+  CURSOR_KEY,
+  STORAGE_KEY,
+  UNKNOWN_SKILL_LABEL,
+} from '../lib/skills'
 import type { CursorState, TableEntry, TableState } from '../lib/skills'
 
 type StoredTableEntry = Omit<TableEntry, 'cursorId'> & { cursorId?: number }
@@ -125,8 +132,8 @@ export function useTableState() {
         if (!hasCursorEntry) {
           tableEntries.push({
             id: createId(),
-            groupSkill: '不明',
-            seriesSkill: '不明',
+            groupSkill: UNKNOWN_SKILL_LABEL,
+            seriesSkill: UNKNOWN_SKILL_LABEL,
             favorite: false,
             createdAt: now,
             cursorId,
@@ -153,7 +160,7 @@ export function useTableState() {
 
   const importData = useCallback((payload: unknown) => {
     if (!payload || typeof payload !== 'object') {
-      return { ok: false, message: '不正なファイル形式です。' }
+      return { ok: false, messageKey: 'verify.invalidFile' }
     }
     const record = payload as Record<string, unknown>
     const nextTables = normalizeTableState((record.tables ?? record.data ?? {}) as StoredTableState)
