@@ -101,7 +101,12 @@ function App() {
 						/>
 					)}
 					{activeView === "verify" && (
-						<VerifyView tables={tables} onExport={exportData} onImport={importData} />
+						<VerifyView
+							tables={tables}
+							onExport={exportData}
+							onImport={importData}
+							onToggleFavorite={toggleFavorite}
+						/>
 					)}
 				</div>
 			</div>

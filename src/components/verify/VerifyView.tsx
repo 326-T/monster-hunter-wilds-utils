@@ -12,9 +12,10 @@ type VerifyViewProps = {
   tables: TableState
   onExport: () => unknown
   onImport: (payload: unknown) => { ok: boolean; message?: string }
+  onToggleFavorite: (tableKey: string, entryId: string, favorite: boolean) => void
 }
 
-export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
+export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: VerifyViewProps) {
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
   const [importMessage, setImportMessage] = useState('')
@@ -143,20 +144,18 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
           <span>列数: {filteredTables.length} 件</span>
         </div>
         <div className="overflow-x-auto rounded-2xl border border-border/60">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
             <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">カーソル</th>
                 {filteredTables.map((table) => (
-                  <th key={table.key} className="px-4 py-3">
-                    <div className="text-[11px] text-muted-foreground">
-                      {table.key}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+                <th key={table.key} className="px-3 py-2">
+                  <div className="text-[10px] text-muted-foreground">{table.key}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
               {cursorIds.length === 0 && (
                 <tr>
                   <td
@@ -169,23 +168,29 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
               )}
               {cursorIds.map((cursorId) => (
                 <tr key={cursorId} className="border-t border-border/50 bg-background">
-                  <td className="px-4 py-3">{cursorId + 1}</td>
+                  <td className="px-3 py-2">{cursorId + 1}</td>
                   {filteredTables.map((table) => {
                     const entry = entryMaps.get(table.key)?.get(cursorId)
                     return (
-                      <td key={table.key} className="px-4 py-3 align-top">
+                      <td key={table.key} className="px-3 py-2 align-top">
                         {entry ? (
-                          <div className="grid gap-1 rounded-lg border border-border/40 bg-background p-2 text-xs">
-                            <div className="text-muted-foreground">
-                              {entry.favorite ? 'お気に入り' : '通常'}
-                            </div>
+                          <button
+                            type="button"
+                            onClick={() => onToggleFavorite(table.key, entry.id, !entry.favorite)}
+                            className={`grid w-full gap-1 rounded-lg border p-2 text-left text-[10px] transition-colors ${
+                              entry.favorite
+                                ? 'border-amber-200 bg-amber-50/70 text-amber-900'
+                                : 'border-border/40 bg-background hover:border-border/70 hover:bg-muted/40'
+                            }`}
+                            title={entry.favorite ? 'お気に入りを外す' : 'お気に入りにする'}
+                          >
                             <div className="text-[11px] text-muted-foreground">シリーズ</div>
-                            <div className="text-sm font-medium">{entry.seriesSkill}</div>
+                            <div className="text-[11px] font-medium">{entry.seriesSkill}</div>
                             <div className="text-[11px] text-muted-foreground">グループ</div>
-                            <div className="text-sm font-medium">{entry.groupSkill}</div>
-                          </div>
+                            <div className="text-[11px] font-medium">{entry.groupSkill}</div>
+                          </button>
                         ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
+                          <span className="text-[10px] text-muted-foreground">-</span>
                         )}
                       </td>
                     )
