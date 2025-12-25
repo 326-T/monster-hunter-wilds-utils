@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Checkbox } from '../ui/checkbox'
 import { Label } from '../ui/label'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, formatDate, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
+import { allTables, ATTRIBUTES, formatDate, WEAPONS } from '../../lib/skills'
 import type { CursorState, TableState } from '../../lib/skills'
 import { cn } from '../../lib/utils'
 import { useSkillVisibility } from '../../hooks/useSkillVisibility'
@@ -35,7 +35,6 @@ export function SaveView({
   const [selectedTableKey, setSelectedTableKey] = useState(allTables[0]?.key ?? '')
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
-  const [intensifyFilter, setIntensifyFilter] = useState('all')
   const [showPassed, setShowPassed] = useState(false)
   const [groupSkill, setGroupSkill] = useState('')
   const [seriesSkill, setSeriesSkill] = useState('')
@@ -54,27 +53,24 @@ export function SaveView({
     hideAllSeries,
   } = useSkillVisibility(groupOptions, seriesOptions)
 
-  const filterTables = (weapon: string, attribute: string, intensify: string) =>
+  const filterTables = (weapon: string, attribute: string) =>
     allTables.filter((table) => {
       if (weapon !== 'all' && table.weapon !== weapon) return false
       if (attribute !== 'all' && table.attribute !== attribute) return false
-      if (intensify !== 'all' && table.intensify !== intensify) return false
       return true
     })
 
   const filteredTables = useMemo(
-    () => filterTables(weaponFilter, attributeFilter, intensifyFilter),
-    [weaponFilter, attributeFilter, intensifyFilter],
+    () => filterTables(weaponFilter, attributeFilter),
+    [weaponFilter, attributeFilter],
   )
 
-  const updateFilters = (next: { weapon?: string; attribute?: string; intensify?: string }) => {
+  const updateFilters = (next: { weapon?: string; attribute?: string }) => {
     const nextWeapon = next.weapon ?? weaponFilter
     const nextAttribute = next.attribute ?? attributeFilter
-    const nextIntensify = next.intensify ?? intensifyFilter
-    const nextFiltered = filterTables(nextWeapon, nextAttribute, nextIntensify)
+    const nextFiltered = filterTables(nextWeapon, nextAttribute)
     setWeaponFilter(nextWeapon)
     setAttributeFilter(nextAttribute)
-    setIntensifyFilter(nextIntensify)
     setSelectedTableKey((prev) =>
       nextFiltered.find((table) => table.key === prev)?.key ?? nextFiltered[0]?.key ?? '',
     )
@@ -137,7 +133,7 @@ export function SaveView({
       <Card className="animate-fade-up">
         <CardHeader>
           <CardTitle className="heading-serif">テーブル一覧</CardTitle>
-          <CardDescription>武器×属性×激化タイプのリンクから移動</CardDescription>
+          <CardDescription>武器×属性のリンクから移動</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
@@ -169,20 +165,6 @@ export function SaveView({
                 ))}
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>激化タイプ</Label>
-              <Select
-                value={intensifyFilter}
-                onChange={(event) => updateFilters({ intensify: event.target.value })}
-              >
-                <option value="all">すべて</option>
-                {INTENSIFY_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </Select>
-            </div>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>一致: {filteredTables.length} 件</span>
@@ -208,9 +190,7 @@ export function SaveView({
                 >
                   <div>
                     <div className="text-sm font-semibold">{table.weapon}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {table.attribute} / {table.intensify}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{table.attribute}</div>
                   </div>
                   <span className="text-xs text-muted-foreground">移動</span>
                 </Button>

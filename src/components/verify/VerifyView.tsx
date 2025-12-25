@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
+import { allTables, ATTRIBUTES, WEAPONS } from '../../lib/skills'
 import type { TableEntry, TableRef, TableState } from '../../lib/skills'
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]))
@@ -17,7 +17,6 @@ type VerifyViewProps = {
 export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
-  const [intensifyFilter, setIntensifyFilter] = useState('all')
   const [importMessage, setImportMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -29,11 +28,10 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
       .filter((table) => {
         if (weaponFilter !== 'all' && table.weapon !== weaponFilter) return false
         if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
-        if (intensifyFilter !== 'all' && table.intensify !== intensifyFilter) return false
         return true
       })
     return metas.sort((a, b) => a.label.localeCompare(b.label, 'ja-JP'))
-  }, [tables, weaponFilter, attributeFilter, intensifyFilter])
+  }, [tables, weaponFilter, attributeFilter])
 
   const entryMaps = useMemo(() => {
     const map = new Map<string, Map<number, TableEntry>>()
@@ -113,7 +111,7 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
           </div>
           {importMessage && <span className="text-xs text-muted-foreground">{importMessage}</span>}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>武器</Label>
             <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
@@ -125,7 +123,7 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
               ))}
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
             <Label>属性</Label>
             <Select
               value={attributeFilter}
@@ -135,20 +133,6 @@ export function VerifyView({ tables, onExport, onImport }: VerifyViewProps) {
               {ATTRIBUTES.map((attribute) => (
                 <option key={attribute} value={attribute}>
                   {attribute}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>激化タイプ</Label>
-            <Select
-              value={intensifyFilter}
-              onChange={(event) => setIntensifyFilter(event.target.value)}
-            >
-              <option value="all">すべて</option>
-              {INTENSIFY_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
                 </option>
               ))}
             </Select>

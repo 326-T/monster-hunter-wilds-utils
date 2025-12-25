@@ -27,13 +27,10 @@ export const ATTRIBUTES = [
   '毒属性',
 ]
 
-export const INTENSIFY_TYPES = ['攻撃激化タイプ', '会心激化タイプ', '属性激化タイプ']
-
 export type TableRef = {
   key: string
   weapon: string
   attribute: string
-  intensify: string
   label: string
 }
 
@@ -50,22 +47,18 @@ export type TableState = Record<string, TableEntry[]>
 
 export type CursorState = number
 
-export const STORAGE_KEY = 'mhwu.tableEntries.v1'
-export const CURSOR_KEY = 'mhwu.attributeCursors.v1'
+export const STORAGE_KEY = 'mhwu.tableEntries.v2'
+export const CURSOR_KEY = 'mhwu.attributeCursors.v2'
 
-export const makeTableKey = (weapon: string, attribute: string, intensify: string) =>
-  `${weapon}::${attribute}::${intensify}`
+export const makeTableKey = (weapon: string, attribute: string) => `${weapon}::${attribute}`
 
 export const allTables: TableRef[] = WEAPONS.flatMap((weapon) =>
-  ATTRIBUTES.flatMap((attribute) =>
-    INTENSIFY_TYPES.map((intensify) => ({
-      weapon,
-      attribute,
-      intensify,
-      key: makeTableKey(weapon, attribute, intensify),
-      label: `${weapon} / ${attribute} / ${intensify}`,
-    })),
-  ),
+  ATTRIBUTES.map((attribute) => ({
+    weapon,
+    attribute,
+    key: makeTableKey(weapon, attribute),
+    label: `${weapon} / ${attribute}`,
+  })),
 )
 
 export const formatDate = (value: string) => {

@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { Select } from '../ui/select'
-import { allTables, ATTRIBUTES, formatDate, INTENSIFY_TYPES, WEAPONS } from '../../lib/skills'
+import { allTables, ATTRIBUTES, formatDate, WEAPONS } from '../../lib/skills'
 import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/skills'
 
 type CursorViewProps = {
@@ -16,16 +16,14 @@ type CursorViewProps = {
 export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps) {
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
-  const [intensifyFilter, setIntensifyFilter] = useState('all')
 
   const filteredAttributeTables = useMemo(() => {
     return allTables.filter((table) => {
       if (weaponFilter !== 'all' && table.weapon !== weaponFilter) return false
       if (attributeFilter !== 'all' && table.attribute !== attributeFilter) return false
-      if (intensifyFilter !== 'all' && table.intensify !== intensifyFilter) return false
       return true
     })
-  }, [weaponFilter, attributeFilter, intensifyFilter])
+  }, [weaponFilter, attributeFilter])
   const activeCursor = cursor
 
   const cursorCandidates = useMemo(() => {
@@ -55,7 +53,7 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
           <CardDescription>NULL でない候補のみ表示。お気に入りを優先表示します。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>武器</Label>
               <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
@@ -67,7 +65,7 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
                 ))}
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label>属性</Label>
               <Select
                 value={attributeFilter}
@@ -77,20 +75,6 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
                 {ATTRIBUTES.map((attribute) => (
                   <option key={attribute} value={attribute}>
                     {attribute}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>激化タイプ</Label>
-              <Select
-                value={intensifyFilter}
-                onChange={(event) => setIntensifyFilter(event.target.value)}
-              >
-                <option value="all">すべて</option>
-                {INTENSIFY_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
                   </option>
                 ))}
               </Select>
@@ -113,9 +97,7 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-semibold">{table.weapon}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {table.attribute} / {table.intensify}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{table.attribute}</div>
                     </div>
                     {entry.favorite && <Badge>お気に入り</Badge>}
                   </div>
