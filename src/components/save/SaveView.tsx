@@ -84,7 +84,10 @@ export function SaveView({
       ? { weapon: selectedWeapon, attribute: selectedAttribute }
       : null
   const entries = tables[selectedTableKey] ?? []
-  const sortedEntries = [...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const sortedEntries = [...entries].sort((a, b) => {
+    if (a.cursorId !== b.cursorId) return b.cursorId - a.cursorId
+    return b.createdAt.localeCompare(a.createdAt)
+  })
   const currentCursor = selectedTableKey ? cursor : 0
   const visibleEntries = showPassed
     ? sortedEntries
