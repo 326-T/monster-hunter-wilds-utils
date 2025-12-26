@@ -6,7 +6,6 @@ import { Label } from '../ui/label'
 import { ResponsiveSelect } from '../ui/responsive-select'
 import { Select } from '../ui/select'
 import {
-  allTables,
   ATTRIBUTES,
   formatDate,
   getAttributeLabel,
@@ -14,6 +13,7 @@ import {
   getTableLabel,
   getWeaponLabel,
   HIDDEN_SKILL_LABEL,
+  makeTableKey,
   UNKNOWN_SKILL_LABEL,
   WEAPONS,
 } from '../../lib/skills'
@@ -52,9 +52,8 @@ export function SaveView({
   const { t, i18n } = useTranslation()
   const language = i18n.language === 'en' ? 'en' : 'ja'
   const optionsErrorMessage = optionsError ? t('error.loadOptions') : ''
-  const [selectedTableKey, setSelectedTableKey] = useState(allTables[0]?.key ?? '')
-  const [weaponFilter, setWeaponFilter] = useState('all')
-  const [attributeFilter, setAttributeFilter] = useState('all')
+  const [selectedWeapon, setSelectedWeapon] = useState(WEAPONS[0] ?? '')
+  const [selectedAttribute, setSelectedAttribute] = useState(ATTRIBUTES[0] ?? '')
   const [showPassed, setShowPassed] = useState(false)
   const [groupSkill, setGroupSkill] = useState('')
   const [seriesSkill, setSeriesSkill] = useState('')
@@ -73,33 +72,18 @@ export function SaveView({
     hideAllSeries,
   } = useSkillVisibility(groupOptions, seriesOptions)
 
-  const filterTables = (weapon: string, attribute: string) =>
-    allTables.filter((table) => {
-      if (weapon !== 'all' && table.weapon !== weapon) return false
-      if (attribute !== 'all' && table.attribute !== attribute) return false
-      return true
-    })
+  const selectedTableKey = useMemo(() => {
+    if (!selectedWeapon || !selectedAttribute) return ''
+    return makeTableKey(selectedWeapon, selectedAttribute)
+  }, [selectedWeapon, selectedAttribute])
 
-  const filteredTables = useMemo(
-    () => filterTables(weaponFilter, attributeFilter),
-    [weaponFilter, attributeFilter],
-  )
-
-  const updateFilters = (next: { weapon?: string; attribute?: string }) => {
-    const nextWeapon = next.weapon ?? weaponFilter
-    const nextAttribute = next.attribute ?? attributeFilter
-    const nextFiltered = filterTables(nextWeapon, nextAttribute)
-    setWeaponFilter(nextWeapon)
-    setAttributeFilter(nextAttribute)
-    setSelectedTableKey((prev) =>
-      nextFiltered.find((table) => table.key === prev)?.key ?? nextFiltered[0]?.key ?? '',
-    )
-  }
-
-  const selectedTable = allTables.find((table) => table.key === selectedTableKey) ?? allTables[0]
+  const selectedTable =
+    selectedWeapon && selectedAttribute
+      ? { weapon: selectedWeapon, attribute: selectedAttribute }
+      : null
   const entries = tables[selectedTableKey] ?? []
   const sortedEntries = [...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  const currentCursor = selectedTable ? cursor : 0
+  const currentCursor = selectedTableKey ? cursor : 0
   const visibleEntries = showPassed
     ? sortedEntries
     : sortedEntries.filter((entry) => entry.cursorId >= currentCursor)
@@ -152,88 +136,38 @@ export function SaveView({
     <div className="flex flex-col gap-8">
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">{t('save.tableList.title')}</CardTitle>
-          <CardDescription>{t('save.tableList.description')}</CardDescription>
+          <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
+          <CardDescription>{t('save.record.description')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t('filter.weapon')}</Label>
               <ResponsiveSelect
-                name="filter-weapon"
-                value={weaponFilter}
-                onChange={(value) => updateFilters({ weapon: value })}
-                options={[
-                  { value: 'all', label: t('common.all') },
-                  ...WEAPONS.map((weapon) => ({
-                    value: weapon,
-                    label: getWeaponLabel(weapon, language),
-                  })),
-                ]}
+                name="selected-weapon"
+                value={selectedWeapon}
+                onChange={setSelectedWeapon}
+                options={WEAPONS.map((weapon) => ({
+                  value: weapon,
+                  label: getWeaponLabel(weapon, language),
+                }))}
                 gridClassName="sm:grid-cols-3 lg:grid-cols-4"
               />
             </div>
             <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label>{t('filter.attribute')}</Label>
               <ResponsiveSelect
-                name="filter-attribute"
-                value={attributeFilter}
-                onChange={(value) => updateFilters({ attribute: value })}
-                options={[
-                  { value: 'all', label: t('common.all') },
-                  ...ATTRIBUTES.map((attribute) => ({
-                    value: attribute,
-                    label: getAttributeLabel(attribute, language),
-                  })),
-                ]}
+                name="selected-attribute"
+                value={selectedAttribute}
+                onChange={setSelectedAttribute}
+                options={ATTRIBUTES.map((attribute) => ({
+                  value: attribute,
+                  label: getAttributeLabel(attribute, language),
+                }))}
                 gridClassName="sm:grid-cols-3 lg:grid-cols-4"
               />
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('common.matches', { count: filteredTables.length })}</span>
-            <span>{t('common.total', { count: allTables.length })}</span>
-          </div>
-          <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1 sm:max-h-[360px]">
-            {filteredTables.length === 0 && (
-              <div className="rounded-lg border border-dashed border-border/60 p-4 text-center text-sm text-muted-foreground">
-                {t('save.noTables')}
-              </div>
-            )}
-            {filteredTables.map((table) => {
-              const active = table.key === selectedTableKey
-              return (
-                <Button
-                  key={table.key}
-                  variant={active ? 'default' : 'ghost'}
-                  className={cn(
-                    'h-auto w-full justify-between rounded-2xl px-4 py-3 text-left',
-                    active ? 'shadow-none' : 'text-foreground',
-                  )}
-                  onClick={() => setSelectedTableKey(table.key)}
-                >
-                  <div>
-                    <div className="text-sm font-semibold">
-                      {getWeaponLabel(table.weapon, language)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {getAttributeLabel(table.attribute, language)}
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{t('common.open')}</span>
-                </Button>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="animate-fade-up">
-        <CardHeader>
-          <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
-          <CardDescription>{t('save.record.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8">
           <div className="rounded-2xl border border-border/40 bg-background p-4">
             <div className="flex flex-col gap-2">
               <div className="text-xs text-muted-foreground">{t('save.selectedTable')}</div>
