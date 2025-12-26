@@ -149,7 +149,8 @@ const binarizeOnCpu = (canvas: HTMLCanvasElement, threshold: number) => {
 
 const binarizeWithWebGpu = async (canvas: HTMLCanvasElement, threshold: number) => {
   const context = canvas.getContext('2d')
-  if (!context || !('gpu' in navigator)) {
+  const gpu = (navigator as { gpu?: { requestAdapter: () => Promise<unknown> } }).gpu
+  if (!context || !gpu) {
     return binarizeOnCpu(canvas, threshold)
   }
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
@@ -165,9 +166,25 @@ const binarizeWithWebGpu = async (canvas: HTMLCanvasElement, threshold: number) 
   while (attempts < MAX_WEBGPU_ATTEMPTS) {
     attempts += 1
     try {
-      const adapter = await navigator.gpu.requestAdapter()
-      if (!adapter) throw new Error('No GPU adapter')
-      const device = await adapter.requestDevice()
+      const adapter = (await gpu.requestAdapter()) as { requestDevice?: () => Promise<unknown> } | null
+      if (!adapter?.requestDevice) throw new Error('No GPU adapter')
+      const device = (await adapter.requestDevice()) as {
+        createBuffer: (options: { size: number; usage: number }) => unknown
+        createShaderModule: (options: { code: string }) => unknown
+        createComputePipeline: (options: {
+          layout: 'auto'
+          compute: { module: unknown; entryPoint: string }
+        }) => { getBindGroupLayout: (index: number) => unknown }
+        createBindGroup: (options: {
+          layout: unknown
+          entries: Array<{ binding: number; resource: { buffer: unknown } }>
+        }) => unknown
+        createCommandEncoder: () => unknown
+        queue: {
+          writeBuffer: (buffer: unknown, offset: number, data: BufferSource) => void
+          submit: (commands: unknown[]) => void
+        }
+      }
       const byteLength = imageData.data.byteLength
       const storageBuffer = device.createBuffer({
         size: byteLength,
@@ -225,7 +242,14 @@ const binarizeWithWebGpu = async (canvas: HTMLCanvasElement, threshold: number) 
         ],
       })
       const commandEncoder = device.createCommandEncoder()
-      const passEncoder = commandEncoder.beginComputePass()
+      const passEncoder = (commandEncoder as {
+        beginComputePass: () => {
+          setPipeline: (pipeline: unknown) => void
+          setBindGroup: (index: number, group: unknown) => void
+          dispatchWorkgroups: (countX: number) => void
+          end: () => void
+        }
+      }).beginComputePass()
       passEncoder.setPipeline(pipeline)
       passEncoder.setBindGroup(0, bindGroup)
       passEncoder.dispatchWorkgroups(Math.ceil(pixelCount / 64))
@@ -234,12 +258,27 @@ const binarizeWithWebGpu = async (canvas: HTMLCanvasElement, threshold: number) 
         size: byteLength,
         usage: gpuBufferUsage.COPY_DST | gpuBufferUsage.MAP_READ,
       })
-      commandEncoder.copyBufferToBuffer(storageBuffer, 0, readBuffer, 0, byteLength)
-      device.queue.submit([commandEncoder.finish()])
-      await readBuffer.mapAsync(gpuMapMode.READ)
-      const copy = new Uint8Array(readBuffer.getMappedRange())
+      const encoder = commandEncoder as {
+        copyBufferToBuffer: (
+          source: unknown,
+          sourceOffset: number,
+          destination: unknown,
+          destinationOffset: number,
+          size: number,
+        ) => void
+        finish: () => unknown
+      }
+      encoder.copyBufferToBuffer(storageBuffer, 0, readBuffer, 0, byteLength)
+      device.queue.submit([encoder.finish()])
+      const mapped = readBuffer as {
+        mapAsync: (mode: number) => Promise<void>
+        getMappedRange: () => ArrayBuffer
+        unmap: () => void
+      }
+      await mapped.mapAsync(gpuMapMode.READ)
+      const copy = new Uint8Array(mapped.getMappedRange())
       imageData.data.set(copy)
-      readBuffer.unmap()
+      mapped.unmap()
       context.putImageData(imageData, 0, 0)
       return canvas
     } catch {
