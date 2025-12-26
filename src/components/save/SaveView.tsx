@@ -181,100 +181,105 @@ export function SaveView({
             </div>
           </div>
 
-          <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <details className="group rounded-2xl border border-border/40 bg-background p-4">
+            <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
               <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="grid gap-4 pt-4">
+              <div className="text-xs text-muted-foreground">
                 {t('save.visibility.note', {
                   label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
                 })}
-              </span>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs"
-                      onClick={showAllSeries}
-                    >
-                      {t('save.showAll')}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs"
-                      onClick={hideAllSeries}
-                    >
-                      {t('save.hideAll')}
-                    </Button>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={showAllSeries}
+                      >
+                        {t('save.showAll')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={hideAllSeries}
+                      >
+                        {t('save.hideAll')}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
+                    <span>{t('common.total', { count: seriesOptions.length })}</span>
+                  </div>
+                  <div className="max-h-40 space-y-2 overflow-y-auto">
+                    {seriesOptions.length === 0 && (
+                      <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
+                    )}
+                    {seriesOptions.map((option) => (
+                      <label key={option} className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={visibleSeriesSet.has(option)}
+                          onChange={() => toggleSeriesVisibility(option)}
+                        />
+                        <span className="truncate">{getSkillLabel(option, language)}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
-                  <span>{t('common.total', { count: seriesOptions.length })}</span>
-                </div>
-                <div className="max-h-40 space-y-2 overflow-y-auto">
-                  {seriesOptions.length === 0 && (
-                    <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
-                  )}
-                  {seriesOptions.map((option) => (
-                    <label key={option} className="flex items-center gap-2 text-xs">
-                      <Checkbox
-                        checked={visibleSeriesSet.has(option)}
-                        onChange={() => toggleSeriesVisibility(option)}
-                      />
-                      <span className="truncate">{getSkillLabel(option, language)}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs"
-                      onClick={showAllGroup}
-                    >
-                      {t('save.showAll')}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs"
-                      onClick={hideAllGroup}
-                    >
-                      {t('save.hideAll')}
-                    </Button>
+                <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={showAllGroup}
+                      >
+                        {t('save.showAll')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={hideAllGroup}
+                      >
+                        {t('save.hideAll')}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
-                  <span>{t('common.total', { count: groupOptions.length })}</span>
-                </div>
-                <div className="max-h-40 space-y-2 overflow-y-auto">
-                  {groupOptions.length === 0 && (
-                    <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
-                  )}
-                  {groupOptions.map((option) => (
-                    <label key={option} className="flex items-center gap-2 text-xs">
-                      <Checkbox
-                        checked={visibleGroupSet.has(option)}
-                        onChange={() => toggleGroupVisibility(option)}
-                      />
-                      <span className="truncate">{getSkillLabel(option, language)}</span>
-                    </label>
-                  ))}
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
+                    <span>{t('common.total', { count: groupOptions.length })}</span>
+                  </div>
+                  <div className="max-h-40 space-y-2 overflow-y-auto">
+                    {groupOptions.length === 0 && (
+                      <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
+                    )}
+                    {groupOptions.map((option) => (
+                      <label key={option} className="flex items-center gap-2 text-xs">
+                        <Checkbox
+                          checked={visibleGroupSet.has(option)}
+                          onChange={() => toggleGroupVisibility(option)}
+                        />
+                        <span className="truncate">{getSkillLabel(option, language)}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </details>
 
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
