@@ -60,6 +60,7 @@ export function SaveView({
   const [showPassed, setShowPassed] = useState(false)
   const [groupSkill, setGroupSkill] = useState('')
   const [seriesSkill, setSeriesSkill] = useState('')
+  const [entryMode, setEntryMode] = useState<'manual' | 'ocr'>('manual')
   const {
     visibleGroupOptions,
     visibleSeriesOptions,
@@ -182,7 +183,14 @@ export function SaveView({
               <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
               <CardDescription>{t('save.record.description')}</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEntryMode('manual')
+                setRunTour(true)
+              }}
+            >
               {t('tour.start')}
             </Button>
           </div>
@@ -232,163 +240,196 @@ export function SaveView({
             </div>
           </div>
 
-          <OcrCapture
-            selectedTableKey={selectedTableKey}
-            seriesOptions={seriesOptions}
-            groupOptions={groupOptions}
-            disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
-            language={language}
-            onAddEntry={onAddEntry}
-            onUpdateEntry={onUpdateEntry}
-          />
+          <div className="flex justify-center">
+            <div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
+              <Button
+                variant={entryMode === 'manual' ? 'default' : 'ghost'}
+                onClick={() => setEntryMode('manual')}
+                className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+                size="sm"
+              >
+                {t('save.entryTabs.manual')}
+              </Button>
+              <Button
+                variant={entryMode === 'ocr' ? 'default' : 'ghost'}
+                onClick={() => setEntryMode('ocr')}
+                className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+                size="sm"
+              >
+                {t('save.entryTabs.ocr')}
+              </Button>
+            </div>
+          </div>
 
-          <details className="group rounded-2xl border border-border/40 bg-background p-4" data-tour="save-visibility">
-            <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
-              <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
-              <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
-                ▾
-              </span>
-            </summary>
-            <div className="grid gap-4 pt-4">
-              <div className="text-xs text-muted-foreground">
-                {t('save.visibility.note', {
-                  label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
-                })}
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-xs"
-                        onClick={showAllSeries}
-                      >
-                        {t('save.showAll')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-xs"
-                        onClick={hideAllSeries}
-                      >
-                        {t('save.hideAll')}
-                      </Button>
+          {entryMode === 'ocr' ? (
+            <OcrCapture
+              selectedTableKey={selectedTableKey}
+              seriesOptions={seriesOptions}
+              groupOptions={groupOptions}
+              disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
+              language={language}
+              onAddEntry={onAddEntry}
+              onUpdateEntry={onUpdateEntry}
+            />
+          ) : (
+            <>
+              <form onSubmit={handleAddEntry} className="grid gap-4" data-tour="save-form">
+                <div className="grid gap-2">
+                  <Label>{t('save.seriesSkill')}</Label>
+                  <ResponsiveSelect
+                    name="series-skill"
+                    value={seriesSelectValue}
+                    onChange={setSeriesSkill}
+                    disabled={Boolean(optionsError)}
+                    placeholder={t('common.select')}
+                    options={seriesSelectOptions.map((option) => ({
+                      value: option,
+                      label: getSkillLabel(option, language),
+                    }))}
+                    gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{t('save.groupSkill')}</Label>
+                  <ResponsiveSelect
+                    name="group-skill"
+                    value={groupSelectValue}
+                    onChange={setGroupSkill}
+                    disabled={Boolean(optionsError)}
+                    placeholder={t('common.select')}
+                    options={groupSelectOptions.map((option) => ({
+                      value: option,
+                      label: getSkillLabel(option, language),
+                    }))}
+                    gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                  />
+                </div>
+                {!optionsError && isLoadingOptions && (
+                  <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>
+                )}
+                {optionsError && (
+                  <div className="rounded-lg border border-dashed border-border/60 bg-background p-3 text-xs text-muted-foreground">
+                    {optionsErrorMessage}
+                  </div>
+                )}
+
+                <details
+                  className="group rounded-2xl border border-border/40 bg-background p-4"
+                  data-tour="save-visibility"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
+                    <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
+                    <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
+                      ▾
+                    </span>
+                  </summary>
+                  <div className="grid gap-4 pt-4">
+                    <div className="text-xs text-muted-foreground">
+                      {t('save.visibility.note', {
+                        label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
+                      })}
+                    </div>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-3 text-xs"
+                              onClick={showAllSeries}
+                            >
+                              {t('save.showAll')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-3 text-xs"
+                              onClick={hideAllSeries}
+                            >
+                              {t('save.hideAll')}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
+                          <span>{t('common.total', { count: seriesOptions.length })}</span>
+                        </div>
+                        <div className="max-h-40 space-y-2 overflow-y-auto">
+                          {seriesOptions.length === 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {t('common.noOptions')}
+                            </div>
+                          )}
+                          {seriesOptions.map((option) => (
+                            <label key={option} className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={visibleSeriesSet.has(option)}
+                                onChange={() => toggleSeriesVisibility(option)}
+                              />
+                              <span className="truncate">{getSkillLabel(option, language)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-3 text-xs"
+                              onClick={showAllGroup}
+                            >
+                              {t('save.showAll')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-3 text-xs"
+                              onClick={hideAllGroup}
+                            >
+                              {t('save.hideAll')}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
+                          <span>{t('common.total', { count: groupOptions.length })}</span>
+                        </div>
+                        <div className="max-h-40 space-y-2 overflow-y-auto">
+                          {groupOptions.length === 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {t('common.noOptions')}
+                            </div>
+                          )}
+                          {groupOptions.map((option) => (
+                            <label key={option} className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={visibleGroupSet.has(option)}
+                                onChange={() => toggleGroupVisibility(option)}
+                              />
+                              <span className="truncate">{getSkillLabel(option, language)}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
-                    <span>{t('common.total', { count: seriesOptions.length })}</span>
-                  </div>
-                  <div className="max-h-40 space-y-2 overflow-y-auto">
-                    {seriesOptions.length === 0 && (
-                      <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
-                    )}
-                    {seriesOptions.map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-xs">
-                        <Checkbox
-                          checked={visibleSeriesSet.has(option)}
-                          onChange={() => toggleSeriesVisibility(option)}
-                        />
-                        <span className="truncate">{getSkillLabel(option, language)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-xs"
-                        onClick={showAllGroup}
-                      >
-                        {t('save.showAll')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-xs"
-                        onClick={hideAllGroup}
-                      >
-                        {t('save.hideAll')}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
-                    <span>{t('common.total', { count: groupOptions.length })}</span>
-                  </div>
-                  <div className="max-h-40 space-y-2 overflow-y-auto">
-                    {groupOptions.length === 0 && (
-                      <div className="text-xs text-muted-foreground">{t('common.noOptions')}</div>
-                    )}
-                    {groupOptions.map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-xs">
-                        <Checkbox
-                          checked={visibleGroupSet.has(option)}
-                          onChange={() => toggleGroupVisibility(option)}
-                        />
-                        <span className="truncate">{getSkillLabel(option, language)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </details>
+                </details>
 
-          <form onSubmit={handleAddEntry} className="grid gap-4" data-tour="save-form">
-            <div className="grid gap-2">
-              <Label>{t('save.seriesSkill')}</Label>
-              <ResponsiveSelect
-                name="series-skill"
-                value={seriesSelectValue}
-                onChange={setSeriesSkill}
-                disabled={Boolean(optionsError)}
-                placeholder={t('common.select')}
-                options={seriesSelectOptions.map((option) => ({
-                  value: option,
-                  label: getSkillLabel(option, language),
-                }))}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>{t('save.groupSkill')}</Label>
-              <ResponsiveSelect
-                name="group-skill"
-                value={groupSelectValue}
-                onChange={setGroupSkill}
-                disabled={Boolean(optionsError)}
-                placeholder={t('common.select')}
-                options={groupSelectOptions.map((option) => ({
-                  value: option,
-                  label: getSkillLabel(option, language),
-                }))}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-              />
-            </div>
-            {!optionsError && isLoadingOptions && (
-              <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>
-            )}
-            {optionsError && (
-              <div className="rounded-lg border border-dashed border-border/60 bg-background p-3 text-xs text-muted-foreground">
-                {optionsErrorMessage}
-              </div>
-            )}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={!resolvedGroupSkill || !resolvedSeriesSkill}
-            >
-              {t('save.addEntry')}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!resolvedGroupSkill || !resolvedSeriesSkill}
+                >
+                  {t('save.addEntry')}
+                </Button>
+              </form>
+            </>
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-3" data-tour="save-toggle">
             <div className="text-sm text-muted-foreground">
