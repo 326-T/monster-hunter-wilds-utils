@@ -3,6 +3,7 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
 import { Label } from '../ui/label'
+import { ResponsiveSelect } from '../ui/responsive-select'
 import { Select } from '../ui/select'
 import {
   allTables,
@@ -155,34 +156,38 @@ export function SaveView({
           <CardDescription>{t('save.tableList.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
+          <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>{t('filter.weapon')}</Label>
-              <Select
+              <ResponsiveSelect
+                name="filter-weapon"
                 value={weaponFilter}
-                onChange={(event) => updateFilters({ weapon: event.target.value })}
-              >
-                <option value="all">{t('common.all')}</option>
-                {WEAPONS.map((weapon) => (
-                  <option key={weapon} value={weapon}>
-                    {getWeaponLabel(weapon, language)}
-                  </option>
-                ))}
-              </Select>
+                onChange={(value) => updateFilters({ weapon: value })}
+                options={[
+                  { value: 'all', label: t('common.all') },
+                  ...WEAPONS.map((weapon) => ({
+                    value: weapon,
+                    label: getWeaponLabel(weapon, language),
+                  })),
+                ]}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+              />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
               <Label>{t('filter.attribute')}</Label>
-              <Select
+              <ResponsiveSelect
+                name="filter-attribute"
                 value={attributeFilter}
-                onChange={(event) => updateFilters({ attribute: event.target.value })}
-              >
-                <option value="all">{t('common.all')}</option>
-                {ATTRIBUTES.map((attribute) => (
-                  <option key={attribute} value={attribute}>
-                    {getAttributeLabel(attribute, language)}
-                  </option>
-                ))}
-              </Select>
+                onChange={(value) => updateFilters({ attribute: value })}
+                options={[
+                  { value: 'all', label: t('common.all') },
+                  ...ATTRIBUTES.map((attribute) => ({
+                    value: attribute,
+                    label: getAttributeLabel(attribute, language),
+                  })),
+                ]}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+              />
             </div>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -340,83 +345,33 @@ export function SaveView({
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
               <Label>{t('save.seriesSkill')}</Label>
-              <div className="sm:hidden">
-                <Select
-                  value={seriesSkill}
-                  onChange={(event) => setSeriesSkill(event.target.value)}
-                  disabled={Boolean(optionsError)}
-                >
-                  <option value="">{t('common.select')}</option>
-                  {seriesSelectOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {getSkillLabel(option, language)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div
-                className={cn(
-                  'hidden gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-                  optionsError && 'pointer-events-none opacity-60',
-                )}
-              >
-                {seriesSelectOptions.map((option) => (
-                  <label key={option} className="flex">
-                    <input
-                      type="radio"
-                      name="series-skill"
-                      value={option}
-                      checked={seriesSkill === option}
-                      onChange={(event) => setSeriesSkill(event.target.value)}
-                      disabled={Boolean(optionsError)}
-                      className="peer sr-only"
-                    />
-                    <span className="flex w-full items-center justify-center rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-colors hover:border-border peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground">
-                      {getSkillLabel(option, language)}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <ResponsiveSelect
+                name="series-skill"
+                value={seriesSkill}
+                onChange={setSeriesSkill}
+                disabled={Boolean(optionsError)}
+                placeholder={t('common.select')}
+                options={seriesSelectOptions.map((option) => ({
+                  value: option,
+                  label: getSkillLabel(option, language),
+                }))}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              />
             </div>
             <div className="grid gap-2">
               <Label>{t('save.groupSkill')}</Label>
-              <div className="sm:hidden">
-                <Select
-                  value={groupSkill}
-                  onChange={(event) => setGroupSkill(event.target.value)}
-                  disabled={Boolean(optionsError)}
-                >
-                  <option value="">{t('common.select')}</option>
-                  {groupSelectOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {getSkillLabel(option, language)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div
-                className={cn(
-                  'hidden gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-                  optionsError && 'pointer-events-none opacity-60',
-                )}
-              >
-                {groupSelectOptions.map((option) => (
-                  <label key={option} className="flex">
-                    <input
-                      type="radio"
-                      name="group-skill"
-                      value={option}
-                      checked={groupSkill === option}
-                      onChange={(event) => setGroupSkill(event.target.value)}
-                      disabled={Boolean(optionsError)}
-                      className="peer sr-only"
-                    />
-                    <span className="flex w-full items-center justify-center rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-colors hover:border-border peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground">
-                      {getSkillLabel(option, language)}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <ResponsiveSelect
+                name="group-skill"
+                value={groupSkill}
+                onChange={setGroupSkill}
+                disabled={Boolean(optionsError)}
+                placeholder={t('common.select')}
+                options={groupSelectOptions.map((option) => ({
+                  value: option,
+                  label: getSkillLabel(option, language),
+                }))}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              />
             </div>
             {!optionsError && isLoadingOptions && (
               <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>

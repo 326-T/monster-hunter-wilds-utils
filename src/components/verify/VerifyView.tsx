@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
-import { Select } from '../ui/select'
+import { ResponsiveSelect } from '../ui/responsive-select'
 import {
   allTables,
   ATTRIBUTES,
@@ -135,28 +135,35 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>{t('filter.weapon')}</Label>
-            <Select value={weaponFilter} onChange={(event) => setWeaponFilter(event.target.value)}>
-              <option value="all">{t('common.all')}</option>
-              {WEAPONS.map((weapon) => (
-                <option key={weapon} value={weapon}>
-                  {getWeaponLabel(weapon, language)}
-                </option>
-              ))}
-            </Select>
+            <ResponsiveSelect
+              name="filter-weapon"
+              value={weaponFilter}
+              onChange={setWeaponFilter}
+              options={[
+                { value: 'all', label: t('common.all') },
+                ...WEAPONS.map((weapon) => ({
+                  value: weapon,
+                  label: getWeaponLabel(weapon, language),
+                })),
+              ]}
+              gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+            />
           </div>
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
             <Label>{t('filter.attribute')}</Label>
-            <Select
+            <ResponsiveSelect
+              name="filter-attribute"
               value={attributeFilter}
-              onChange={(event) => setAttributeFilter(event.target.value)}
-            >
-              <option value="all">{t('common.all')}</option>
-              {ATTRIBUTES.map((attribute) => (
-                <option key={attribute} value={attribute}>
-                  {getAttributeLabel(attribute, language)}
-                </option>
-              ))}
-            </Select>
+              onChange={setAttributeFilter}
+              options={[
+                { value: 'all', label: t('common.all') },
+                ...ATTRIBUTES.map((attribute) => ({
+                  value: attribute,
+                  label: getAttributeLabel(attribute, language),
+                })),
+              ]}
+              gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+            />
           </div>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
