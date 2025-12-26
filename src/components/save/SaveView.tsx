@@ -97,7 +97,7 @@ export function SaveView({
 
   const selectedTable = allTables.find((table) => table.key === selectedTableKey) ?? allTables[0]
   const entries = tables[selectedTableKey] ?? []
-  const sortedEntries = [...entries].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const sortedEntries = [...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const currentCursor = selectedTable ? cursor : 0
   const visibleEntries = showPassed
     ? sortedEntries
