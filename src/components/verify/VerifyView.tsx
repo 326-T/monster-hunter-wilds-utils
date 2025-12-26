@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
@@ -15,6 +15,7 @@ import {
 } from '../../lib/skills'
 import type { TableEntry, TableRef, TableState } from '../../lib/skills'
 import { useTranslation } from 'react-i18next'
+import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride'
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]))
 
@@ -28,6 +29,7 @@ type VerifyViewProps = {
 export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: VerifyViewProps) {
   const { t, i18n } = useTranslation()
   const language = i18n.language === 'en' ? 'en' : 'ja'
+  const [runTour, setRunTour] = useState(false)
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
   const [importMessageKey, setImportMessageKey] = useState('')
@@ -70,6 +72,20 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
     return Array.from(set).sort((a, b) => a - b)
   }, [filteredTables, tables])
 
+  const tourSteps = useMemo<Step[]>(
+    () => [
+      { target: "[data-tour='verify-export']", content: t('tour.verify.export') },
+      { target: "[data-tour='verify-filters']", content: t('tour.verify.filters') },
+      { target: "[data-tour='verify-table']", content: t('tour.verify.table') },
+    ],
+    [t],
+  )
+
+  const handleTour = useCallback((data: CallBackProps) => {
+    const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED
+    if (finished) setRunTour(false)
+  }, [])
+
   const handleExport = () => {
     const data = onExport()
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -103,12 +119,39 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
 
   return (
     <Card className="animate-fade-up">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showSkipButton
+        showProgress
+        disableOverlayClose
+        scrollOffset={160}
+        callback={handleTour}
+        locale={{
+          back: t('tour.back'),
+          close: t('tour.close'),
+          last: t('tour.last'),
+          next: t('tour.next'),
+          skip: t('tour.skip'),
+        }}
+      />
       <CardHeader>
-        <CardTitle className="heading-serif">{t('verify.title')}</CardTitle>
-        <CardDescription>{t('verify.description')}</CardDescription>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="space-y-1">
+            <CardTitle className="heading-serif">{t('verify.title')}</CardTitle>
+            <CardDescription>{t('verify.description')}</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+            {t('tour.start')}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          className="flex flex-wrap items-center justify-between gap-3"
+          data-tour="verify-export"
+        >
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={handleExport}>
               {t('verify.export')}
@@ -132,7 +175,7 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
             <span className="text-xs text-muted-foreground">{t(importMessageKey)}</span>
           )}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2" data-tour="verify-filters">
           <div className="space-y-2">
             <Label>{t('filter.weapon')}</Label>
             <ResponsiveSelect
@@ -170,7 +213,7 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
           <span>{t('verify.cursors', { count: cursorIds.length })}</span>
           <span>{t('verify.columns', { count: filteredTables.length })}</span>
         </div>
-        <div className="overflow-x-auto rounded-2xl border border-border/60">
+        <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="verify-table">
           <table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
             <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
               <tr>

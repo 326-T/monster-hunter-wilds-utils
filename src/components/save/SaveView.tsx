@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
@@ -21,6 +21,7 @@ import type { CursorState, TableState } from '../../lib/skills'
 import { cn } from '../../lib/utils'
 import { useSkillVisibility } from '../../hooks/useSkillVisibility'
 import { useTranslation } from 'react-i18next'
+import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride'
 
 type SaveViewProps = {
   tables: TableState
@@ -52,6 +53,7 @@ export function SaveView({
   const { t, i18n } = useTranslation()
   const language = i18n.language === 'en' ? 'en' : 'ja'
   const optionsErrorMessage = optionsError ? t('error.loadOptions') : ''
+  const [runTour, setRunTour] = useState(false)
   const [selectedWeapon, setSelectedWeapon] = useState(WEAPONS[0] ?? '')
   const [selectedAttribute, setSelectedAttribute] = useState(ATTRIBUTES[0] ?? '')
   const [showPassed, setShowPassed] = useState(false)
@@ -124,6 +126,23 @@ export function SaveView({
     }
   }, [groupSkill, visibleGroupSet])
 
+  const tourSteps = useMemo<Step[]>(
+    () => [
+      { target: "[data-tour='save-select']", content: t('tour.save.select') },
+      { target: "[data-tour='save-current']", content: t('tour.save.current') },
+      { target: "[data-tour='save-visibility']", content: t('tour.save.visibility') },
+      { target: "[data-tour='save-form']", content: t('tour.save.form') },
+      { target: "[data-tour='save-toggle']", content: t('tour.save.toggle') },
+      { target: "[data-tour='save-table']", content: t('tour.save.table') },
+    ],
+    [t],
+  )
+
+  const handleTour = useCallback((data: CallBackProps) => {
+    const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED
+    if (finished) setRunTour(false)
+  }, [])
+
   const handleAddEntry = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!selectedTableKey || !groupSkill || !seriesSkill) return
@@ -134,13 +153,40 @@ export function SaveView({
 
   return (
     <div className="flex flex-col gap-8">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showSkipButton
+        showProgress
+        disableOverlayClose
+        scrollOffset={160}
+        callback={handleTour}
+        locale={{
+          back: t('tour.back'),
+          close: t('tour.close'),
+          last: t('tour.last'),
+          next: t('tour.next'),
+          skip: t('tour.skip'),
+        }}
+      />
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
-          <CardDescription>{t('save.record.description')}</CardDescription>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-1">
+              <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
+              <CardDescription>{t('save.record.description')}</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+              {t('tour.start')}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2">
+          <div
+            className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2"
+            data-tour="save-select"
+          >
             <div className="space-y-2">
               <Label>{t('filter.weapon')}</Label>
               <ResponsiveSelect
@@ -168,7 +214,7 @@ export function SaveView({
               />
             </div>
           </div>
-          <div className="rounded-2xl border border-border/40 bg-background p-4">
+          <div className="rounded-2xl border border-border/40 bg-background p-4" data-tour="save-current">
             <div className="flex flex-col gap-2">
               <div className="text-xs text-muted-foreground">{t('save.selectedTable')}</div>
               <div className="text-lg font-semibold">
@@ -181,7 +227,7 @@ export function SaveView({
             </div>
           </div>
 
-          <details className="group rounded-2xl border border-border/40 bg-background p-4">
+          <details className="group rounded-2xl border border-border/40 bg-background p-4" data-tour="save-visibility">
             <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
               <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
               <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
@@ -281,7 +327,7 @@ export function SaveView({
             </div>
           </details>
 
-          <form onSubmit={handleAddEntry} className="grid gap-4">
+          <form onSubmit={handleAddEntry} className="grid gap-4" data-tour="save-form">
             <div className="grid gap-2">
               <Label>{t('save.seriesSkill')}</Label>
               <ResponsiveSelect
@@ -325,7 +371,7 @@ export function SaveView({
             </Button>
           </form>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3" data-tour="save-toggle">
             <div className="text-sm text-muted-foreground">
               {t('save.passedNote')}
             </div>
@@ -334,7 +380,7 @@ export function SaveView({
             </Button>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-border/60">
+          <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="save-table">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>

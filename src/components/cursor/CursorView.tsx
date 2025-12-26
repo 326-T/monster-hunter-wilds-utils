@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
@@ -17,6 +17,7 @@ import {
 } from '../../lib/skills'
 import type { CursorState, TableEntry, TableRef, TableState } from '../../lib/skills'
 import { useTranslation } from 'react-i18next'
+import Joyride, { STATUS, type CallBackProps, type Step } from 'react-joyride'
 
 type CursorViewProps = {
   tables: TableState
@@ -27,6 +28,7 @@ type CursorViewProps = {
 export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps) {
   const { t, i18n } = useTranslation()
   const language = i18n.language === 'en' ? 'en' : 'ja'
+  const [runTour, setRunTour] = useState(false)
   const [weaponFilter, setWeaponFilter] = useState('all')
   const [attributeFilter, setAttributeFilter] = useState('all')
 
@@ -60,17 +62,59 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
 
   const nullCount = filteredAttributeTables.length - cursorCandidates.length
 
+  const tourSteps = useMemo<Step[]>(
+    () => [
+      { target: "[data-tour='cursor-filters']", content: t('tour.cursor.filters') },
+      { target: "[data-tour='cursor-candidates']", content: t('tour.cursor.candidates') },
+      {
+        target: "[data-tour='cursor-candidates']",
+        content: t('tour.cursor.advance'),
+        disableBeacon: true,
+      },
+    ],
+    [t],
+  )
+
+  const handleTour = useCallback((data: CallBackProps) => {
+    const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED
+    if (finished) setRunTour(false)
+  }, [])
+
   return (
     <div className="flex flex-col gap-8">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showSkipButton
+        showProgress
+        disableOverlayClose
+        scrollOffset={160}
+        callback={handleTour}
+        locale={{
+          back: t('tour.back'),
+          close: t('tour.close'),
+          last: t('tour.last'),
+          next: t('tour.next'),
+          skip: t('tour.skip'),
+        }}
+      />
       <Card className="animate-fade-up">
         <CardHeader>
-          <CardTitle className="heading-serif">
-            {t('cursor.title', { value: activeCursor })}
-          </CardTitle>
-          <CardDescription>{t('cursor.description')}</CardDescription>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-1">
+              <CardTitle className="heading-serif">
+                {t('cursor.title', { value: activeCursor })}
+              </CardTitle>
+              <CardDescription>{t('cursor.description')}</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+              {t('tour.start')}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2" data-tour="cursor-filters">
             <div className="space-y-2">
               <Label>{t('filter.weapon')}</Label>
               <ResponsiveSelect
@@ -109,7 +153,7 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
             <span>{t('cursor.nullCount', { count: nullCount })}</span>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2" data-tour="cursor-candidates">
             {cursorCandidates.length === 0 && (
               <div className="rounded-xl border border-dashed border-border/60 bg-background p-6 text-center text-sm text-muted-foreground">
                 {t('cursor.noCandidates')}

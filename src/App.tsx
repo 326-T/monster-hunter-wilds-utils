@@ -108,7 +108,7 @@ function App() {
 					</div>
 				</div>
 			</header>
-			<div className="relative pt-20">
+			<div className="relative pt-32 sm:pt-36">
 				<div className="pointer-events-none absolute -top-32 right-10 h-72 w-72 rounded-full blur-3xl animate-float" />
 				<div className="pointer-events-none absolute bottom-[-120px] left-[-80px] h-80 w-80 rounded-full blur-3xl" />
 				<div className="mx-auto max-w-6xl px-6 py-10 lg:py-16">
