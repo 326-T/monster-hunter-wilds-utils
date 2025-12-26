@@ -340,33 +340,83 @@ export function SaveView({
           <form onSubmit={handleAddEntry} className="grid gap-4">
             <div className="grid gap-2">
               <Label>{t('save.seriesSkill')}</Label>
-              <Select
-                value={seriesSkill}
-                onChange={(event) => setSeriesSkill(event.target.value)}
-                disabled={Boolean(optionsError)}
+              <div className="sm:hidden">
+                <Select
+                  value={seriesSkill}
+                  onChange={(event) => setSeriesSkill(event.target.value)}
+                  disabled={Boolean(optionsError)}
+                >
+                  <option value="">{t('common.select')}</option>
+                  {seriesSelectOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {getSkillLabel(option, language)}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div
+                className={cn(
+                  'hidden gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+                  optionsError && 'pointer-events-none opacity-60',
+                )}
               >
-                <option value="">{t('common.select')}</option>
                 {seriesSelectOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {getSkillLabel(option, language)}
-                  </option>
+                  <label key={option} className="flex">
+                    <input
+                      type="radio"
+                      name="series-skill"
+                      value={option}
+                      checked={seriesSkill === option}
+                      onChange={(event) => setSeriesSkill(event.target.value)}
+                      disabled={Boolean(optionsError)}
+                      className="peer sr-only"
+                    />
+                    <span className="flex w-full items-center justify-center rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-colors hover:border-border peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground">
+                      {getSkillLabel(option, language)}
+                    </span>
+                  </label>
                 ))}
-              </Select>
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>{t('save.groupSkill')}</Label>
-              <Select
-                value={groupSkill}
-                onChange={(event) => setGroupSkill(event.target.value)}
-                disabled={Boolean(optionsError)}
+              <div className="sm:hidden">
+                <Select
+                  value={groupSkill}
+                  onChange={(event) => setGroupSkill(event.target.value)}
+                  disabled={Boolean(optionsError)}
+                >
+                  <option value="">{t('common.select')}</option>
+                  {groupSelectOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {getSkillLabel(option, language)}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div
+                className={cn(
+                  'hidden gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+                  optionsError && 'pointer-events-none opacity-60',
+                )}
               >
-                <option value="">{t('common.select')}</option>
                 {groupSelectOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {getSkillLabel(option, language)}
-                  </option>
+                  <label key={option} className="flex">
+                    <input
+                      type="radio"
+                      name="group-skill"
+                      value={option}
+                      checked={groupSkill === option}
+                      onChange={(event) => setGroupSkill(event.target.value)}
+                      disabled={Boolean(optionsError)}
+                      className="peer sr-only"
+                    />
+                    <span className="flex w-full items-center justify-center rounded-lg border border-border/60 bg-background px-3 py-2 text-xs transition-colors hover:border-border peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-foreground">
+                      {getSkillLabel(option, language)}
+                    </span>
+                  </label>
                 ))}
-              </Select>
+              </div>
             </div>
             {!optionsError && isLoadingOptions && (
               <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>

@@ -41,6 +41,33 @@ function App() {
 				<div className="mx-auto max-w-6xl px-6 py-4">
 					<div className="flex flex-col items-center gap-3">
 						<div
+							className={`overflow-hidden transition-all duration-300 ${
+								showHeaderTitle ? "max-h-16 opacity-100" : "max-h-0 opacity-0"
+							}`}
+							aria-hidden={!showHeaderTitle}
+						>
+							<div className="flex justify-center">
+								<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
+									<Button
+										variant={language === "ja" ? "default" : "ghost"}
+										onClick={() => i18n.changeLanguage("ja")}
+										className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+										size="sm"
+									>
+										{t("language.ja")}
+									</Button>
+									<Button
+										variant={language === "en" ? "default" : "ghost"}
+										onClick={() => i18n.changeLanguage("en")}
+										className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+										size="sm"
+									>
+										{t("language.en")}
+									</Button>
+								</div>
+							</div>
+						</div>
+						<div
 							className={`overflow-hidden text-center transition-all duration-300 ${
 								showHeaderTitle ? "max-h-20 opacity-100" : "max-h-0 opacity-0"
 							}`}
@@ -49,26 +76,6 @@ function App() {
 							<h1 className="text-lg font-semibold heading-serif sm:text-xl">
 								{t("app.title")}
 							</h1>
-						</div>
-						<div className="flex justify-center">
-							<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
-								<Button
-									variant={language === "ja" ? "default" : "ghost"}
-									onClick={() => i18n.changeLanguage("ja")}
-									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
-									size="sm"
-								>
-									{t("language.ja")}
-								</Button>
-								<Button
-									variant={language === "en" ? "default" : "ghost"}
-									onClick={() => i18n.changeLanguage("en")}
-									className="w-24 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
-									size="sm"
-								>
-									{t("language.en")}
-								</Button>
-							</div>
 						</div>
 						<div className="flex justify-center">
 							<div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
