@@ -68,24 +68,14 @@ export function useSkillVisibility(
   )
 
   useEffect(() => {
-    if (groupOptions.length === 0) return
-    setVisibleGroup((prev) => normalizeVisibility(prev, groupOptions))
-  }, [groupOptions])
-
-  useEffect(() => {
-    if (seriesOptions.length === 0) return
-    setVisibleSeries((prev) => normalizeVisibility(prev, seriesOptions))
-  }, [seriesOptions])
-
-  useEffect(() => {
     if (visibleGroup === null) return
-    saveVisibility(GROUP_VISIBILITY_KEY, visibleGroup)
-  }, [visibleGroup])
+    saveVisibility(GROUP_VISIBILITY_KEY, normalizeVisibility(visibleGroup, groupOptions))
+  }, [groupOptions, visibleGroup])
 
   useEffect(() => {
     if (visibleSeries === null) return
-    saveVisibility(SERIES_VISIBILITY_KEY, visibleSeries)
-  }, [visibleSeries])
+    saveVisibility(SERIES_VISIBILITY_KEY, normalizeVisibility(visibleSeries, seriesOptions))
+  }, [seriesOptions, visibleSeries])
 
   const visibleGroupOptions = useMemo(
     () => normalizeVisibility(visibleGroup, groupOptions),

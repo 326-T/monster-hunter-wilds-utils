@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
 import { Label } from '../ui/label'
 import { ResponsiveSelect } from '../ui/responsive-select'
 import { Select } from '../ui/select'
+import { OcrCapture } from '../ocr/OcrCapture'
 import {
   ATTRIBUTES,
   formatDate,
@@ -105,29 +106,30 @@ export function SaveView({
     return options[0] ?? ''
   }
 
-  useEffect(() => {
-    if (seriesSkill || seriesOptions.length === 0) return
-    setSeriesSkill(pickDefaultSkill(hiddenSeriesCount, seriesOptions))
-  }, [seriesSkill, seriesOptions, hiddenSeriesCount])
+  const defaultSeriesSkill = useMemo(() => {
+    if (seriesOptions.length === 0) return ''
+    return pickDefaultSkill(hiddenSeriesCount, seriesOptions)
+  }, [hiddenSeriesCount, seriesOptions])
 
-  useEffect(() => {
-    if (groupSkill || groupOptions.length === 0) return
-    setGroupSkill(pickDefaultSkill(hiddenGroupCount, groupOptions))
-  }, [groupSkill, groupOptions, hiddenGroupCount])
+  const defaultGroupSkill = useMemo(() => {
+    if (groupOptions.length === 0) return ''
+    return pickDefaultSkill(hiddenGroupCount, groupOptions)
+  }, [groupOptions, hiddenGroupCount])
 
-  useEffect(() => {
-    if (!seriesSkill || seriesSkill === HIDDEN_SKILL_LABEL) return
-    if (!visibleSeriesSet.has(seriesSkill)) {
-      setSeriesSkill(HIDDEN_SKILL_LABEL)
-    }
-  }, [seriesSkill, visibleSeriesSet])
-
-  useEffect(() => {
-    if (!groupSkill || groupSkill === HIDDEN_SKILL_LABEL) return
-    if (!visibleGroupSet.has(groupSkill)) {
-      setGroupSkill(HIDDEN_SKILL_LABEL)
-    }
-  }, [groupSkill, visibleGroupSet])
+  const resolvedSeriesSkill = seriesSkill || defaultSeriesSkill
+  const resolvedGroupSkill = groupSkill || defaultGroupSkill
+  const seriesSelectValue =
+    resolvedSeriesSkill &&
+    resolvedSeriesSkill !== HIDDEN_SKILL_LABEL &&
+    !visibleSeriesSet.has(resolvedSeriesSkill)
+      ? HIDDEN_SKILL_LABEL
+      : resolvedSeriesSkill
+  const groupSelectValue =
+    resolvedGroupSkill &&
+    resolvedGroupSkill !== HIDDEN_SKILL_LABEL &&
+    !visibleGroupSet.has(resolvedGroupSkill)
+      ? HIDDEN_SKILL_LABEL
+      : resolvedGroupSkill
 
   const tourSteps = useMemo<Step[]>(
     () => [
@@ -148,8 +150,8 @@ export function SaveView({
 
   const handleAddEntry = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedTableKey || !groupSkill || !seriesSkill) return
-    onAddEntry(selectedTableKey, groupSkill, seriesSkill)
+    if (!selectedTableKey || !resolvedGroupSkill || !resolvedSeriesSkill) return
+    onAddEntry(selectedTableKey, resolvedGroupSkill, resolvedSeriesSkill)
     setGroupSkill('')
     setSeriesSkill('')
   }
@@ -229,6 +231,15 @@ export function SaveView({
               </div>
             </div>
           </div>
+
+          <OcrCapture
+            selectedTableKey={selectedTableKey}
+            seriesOptions={seriesOptions}
+            groupOptions={groupOptions}
+            disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
+            language={language}
+            onAddEntry={onAddEntry}
+          />
 
           <details className="group rounded-2xl border border-border/40 bg-background p-4" data-tour="save-visibility">
             <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
@@ -335,7 +346,7 @@ export function SaveView({
               <Label>{t('save.seriesSkill')}</Label>
               <ResponsiveSelect
                 name="series-skill"
-                value={seriesSkill}
+                value={seriesSelectValue}
                 onChange={setSeriesSkill}
                 disabled={Boolean(optionsError)}
                 placeholder={t('common.select')}
@@ -350,7 +361,7 @@ export function SaveView({
               <Label>{t('save.groupSkill')}</Label>
               <ResponsiveSelect
                 name="group-skill"
-                value={groupSkill}
+                value={groupSelectValue}
                 onChange={setGroupSkill}
                 disabled={Boolean(optionsError)}
                 placeholder={t('common.select')}
@@ -369,7 +380,11 @@ export function SaveView({
                 {optionsErrorMessage}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={!groupSkill || !seriesSkill}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!resolvedGroupSkill || !resolvedSeriesSkill}
+            >
               {t('save.addEntry')}
             </Button>
           </form>

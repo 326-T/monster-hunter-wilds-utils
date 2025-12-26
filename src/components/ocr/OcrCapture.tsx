@@ -1,0 +1,435 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Button } from '../ui/button'
+import { Label } from '../ui/label'
+import { Select } from '../ui/select'
+import { cn } from '../../lib/utils'
+import { getSkillLabel, UNKNOWN_SKILL_LABEL } from '../../lib/skills'
+import { matchSkillFromText, preprocessCanvas } from '../../lib/ocr'
+import { useOcrCamera } from '../../hooks/useOcrCamera'
+import type { Worker as TesseractWorker, LoggerMessage } from 'tesseract.js'
+
+type NormalizedRoi = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type OcrCaptureProps = {
+  selectedTableKey: string
+  seriesOptions: string[]
+  groupOptions: string[]
+  disabled?: boolean
+  language: 'ja' | 'en'
+  onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => void
+}
+
+const MAX_CAPTURE_WIDTH = 720
+const MIN_ROI_SIZE = 0.05
+const OCR_LANGUAGE = 'jpn'
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+const buildRoi = (start: { x: number; y: number }, current: { x: number; y: number }) => {
+  const x = Math.min(start.x, current.x)
+  const y = Math.min(start.y, current.y)
+  const width = Math.abs(current.x - start.x)
+  const height = Math.abs(current.y - start.y)
+  return { x, y, width, height }
+}
+
+const resolveRoiInVideo = (
+  roi: NormalizedRoi,
+  containerRect: DOMRect,
+  videoWidth: number,
+  videoHeight: number,
+) => {
+  const displayWidth = containerRect.width
+  const displayHeight = containerRect.height
+  const videoAspect = videoWidth / videoHeight
+  const displayAspect = displayWidth / displayHeight
+
+  let drawnWidth = displayWidth
+  let drawnHeight = displayHeight
+  let offsetX = 0
+  let offsetY = 0
+
+  if (videoAspect > displayAspect) {
+    drawnWidth = displayWidth
+    drawnHeight = displayWidth / videoAspect
+    offsetY = (displayHeight - drawnHeight) / 2
+  } else {
+    drawnHeight = displayHeight
+    drawnWidth = displayHeight * videoAspect
+    offsetX = (displayWidth - drawnWidth) / 2
+  }
+
+  const roiDisplay = {
+    x: roi.x * displayWidth - offsetX,
+    y: roi.y * displayHeight - offsetY,
+    width: roi.width * displayWidth,
+    height: roi.height * displayHeight,
+  }
+
+  const clampedX = clamp(roiDisplay.x, 0, drawnWidth)
+  const clampedY = clamp(roiDisplay.y, 0, drawnHeight)
+  const clampedWidth = clamp(roiDisplay.width, 0, drawnWidth - clampedX)
+  const clampedHeight = clamp(roiDisplay.height, 0, drawnHeight - clampedY)
+  const scaleX = videoWidth / drawnWidth
+  const scaleY = videoHeight / drawnHeight
+
+  return {
+    sx: Math.round(clampedX * scaleX),
+    sy: Math.round(clampedY * scaleY),
+    sw: Math.max(1, Math.round(clampedWidth * scaleX)),
+    sh: Math.max(1, Math.round(clampedHeight * scaleY)),
+  }
+}
+
+export function OcrCapture({
+  selectedTableKey,
+  seriesOptions,
+  groupOptions,
+  disabled = false,
+  language,
+  onAddEntry,
+}: OcrCaptureProps) {
+  const { t } = useTranslation()
+  const {
+    stream,
+    isActive,
+    devices,
+    selectedDeviceId,
+    error: cameraError,
+    start,
+    stop,
+    restart,
+    setSelectedDeviceId,
+  } = useOcrCamera()
+  const [roi, setRoi] = useState<NormalizedRoi | null>(null)
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [ocrStatus, setOcrStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
+  const [ocrProgress, setOcrProgress] = useState(0)
+  const [ocrError, setOcrError] = useState('')
+  const [result, setResult] = useState<{
+    seriesSkill: string
+    groupSkill: string
+    text: string
+  } | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const workerRef = useRef<TesseractWorker | null>(null)
+  const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null)
+  const hasWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator
+
+  const roiReady = roi && roi.width >= MIN_ROI_SIZE && roi.height >= MIN_ROI_SIZE
+  const canCapture = roiReady && isActive && !disabled
+
+  const initWorker = useCallback(async () => {
+    if (workerRef.current) return workerRef.current
+    if (workerPromiseRef.current) return workerPromiseRef.current
+    const { createWorker } = await import('tesseract.js')
+    const promise = (async () => {
+      const worker = await createWorker(OCR_LANGUAGE, 1, {
+        logger: (message: LoggerMessage) => {
+          if (message.status === 'recognizing text') {
+            setOcrProgress(Math.round(message.progress * 100))
+          }
+        },
+      })
+      workerRef.current = worker
+      return worker
+    })()
+    workerPromiseRef.current = promise
+    try {
+      return await promise
+    } finally {
+      if (workerPromiseRef.current === promise) {
+        workerPromiseRef.current = null
+      }
+    }
+  }, [])
+
+  const handleStart = useCallback(async () => {
+    setOcrStatus('idle')
+    setOcrError('')
+    setOcrProgress(0)
+    await start()
+    void initWorker().catch(() => {
+      setOcrStatus('error')
+      setOcrError(t('save.ocr.failed'))
+    })
+  }, [initWorker, start, t])
+
+  const handleStop = useCallback(() => {
+    stop()
+    setOcrProgress(0)
+  }, [stop])
+
+  useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate()
+        workerRef.current = null
+      }
+      workerPromiseRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current || disabled || !isActive) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
+    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
+    setDragStart({ x, y })
+    setRoi({ x, y, width: 0, height: 0 })
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current || !dragStart || !isDragging) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
+    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
+    setRoi(buildRoi(dragStart, { x, y }))
+  }
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    setIsDragging(false)
+    setDragStart(null)
+    event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+
+  const captureCanvas = useCallback(() => {
+    const video = videoRef.current
+    const container = containerRef.current
+    if (!video || !container || !roi || !video.videoWidth || !video.videoHeight) return null
+    const rect = container.getBoundingClientRect()
+    const { sx, sy, sw, sh } = resolveRoiInVideo(roi, rect, video.videoWidth, video.videoHeight)
+    const targetWidth = Math.min(MAX_CAPTURE_WIDTH, sw)
+    const scale = targetWidth / sw
+    const targetHeight = Math.max(1, Math.round(sh * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = targetWidth
+    canvas.height = targetHeight
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    context.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight)
+    return canvas
+  }, [roi])
+
+  const handleCapture = useCallback(async () => {
+    if (!selectedTableKey) {
+      setOcrStatus('error')
+      setOcrError(t('save.ocr.tableMissing'))
+      return
+    }
+    if (!canCapture) {
+      setOcrStatus('error')
+      setOcrError(t('save.ocr.noRoi'))
+      return
+    }
+    setOcrError('')
+    setOcrStatus('processing')
+    setOcrProgress(0)
+    try {
+      const rawCanvas = captureCanvas()
+      if (!rawCanvas) throw new Error('Capture failed')
+      const processedCanvas = await preprocessCanvas(rawCanvas, { threshold: 160 })
+      const worker = await initWorker()
+      const {
+        data: { text },
+      } = await worker.recognize(processedCanvas)
+      const seriesSkill = matchSkillFromText(text, seriesOptions)
+      const groupSkill = matchSkillFromText(text, groupOptions)
+      onAddEntry(selectedTableKey, groupSkill, seriesSkill)
+      setResult({ seriesSkill, groupSkill, text })
+      setOcrStatus('success')
+    } catch {
+      setOcrStatus('error')
+      setOcrError(t('save.ocr.failed'))
+    }
+  }, [
+    canCapture,
+    captureCanvas,
+    groupOptions,
+    initWorker,
+    onAddEntry,
+    selectedTableKey,
+    seriesOptions,
+    t,
+  ])
+
+  const statusMessage = useMemo(() => {
+    if (ocrStatus === 'processing') {
+      return ocrProgress > 0
+        ? t('save.ocr.progress', { value: ocrProgress })
+        : t('save.ocr.processing')
+    }
+    if (ocrStatus === 'success') return t('save.ocr.saved')
+    if (ocrStatus === 'error') return ocrError || t('save.ocr.failed')
+    if (!isActive) return t('save.ocr.idle')
+    if (!roiReady) return t('save.ocr.noRoi')
+    return t('save.ocr.ready')
+  }, [isActive, ocrError, ocrProgress, ocrStatus, roiReady, t])
+
+  const resultSummary = useMemo(() => {
+    if (!result) return null
+    return {
+      series: getSkillLabel(result.seriesSkill, language),
+      group: getSkillLabel(result.groupSkill, language),
+    }
+  }, [language, result])
+
+  const deviceOptions = useMemo(() => {
+    return devices.map((device, index) => ({
+      id: device.deviceId,
+      label:
+        device.label || t('save.ocr.cameraDeviceFallback', { value: index + 1 }),
+    }))
+  }, [devices, t])
+
+  const handleDeviceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextId = event.target.value
+    setSelectedDeviceId(nextId)
+    if (isActive) {
+      void restart(nextId || undefined)
+    }
+  }
+
+  return (
+    <div className="grid gap-4 rounded-2xl border border-border/40 bg-background p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="space-y-1">
+          <div className="text-sm font-semibold">{t('save.ocr.title')}</div>
+          <div className="text-xs text-muted-foreground">{t('save.ocr.description')}</div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>{hasWebGpu ? t('save.ocr.webgpuOn') : t('save.ocr.webgpuOff')}</span>
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        <div className="grid gap-2">
+          <Label className="text-xs">{t('save.ocr.cameraDevice')}</Label>
+          <Select
+            value={selectedDeviceId}
+            onChange={handleDeviceChange}
+            className="h-9 text-xs"
+          >
+            <option value="">{t('save.ocr.cameraAuto')}</option>
+            {deviceOptions.map((device) => (
+              <option key={device.id} value={device.id}>
+                {device.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {!isActive ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleStart}
+              disabled={disabled}
+            >
+              {t('save.ocr.startCamera')}
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" size="sm" onClick={handleStop}>
+              {t('save.ocr.stopCamera')}
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleCapture}
+            disabled={!canCapture || ocrStatus === 'processing'}
+          >
+            {t('save.ocr.shutter')}
+          </Button>
+        </div>
+        {cameraError && (
+          <div className="text-xs text-rose-400">{t('save.ocr.cameraError')}</div>
+        )}
+        <div className="text-xs text-muted-foreground">{t('save.ocr.roiHelp')}</div>
+      </div>
+
+      <div
+        ref={containerRef}
+        className={cn(
+          'relative w-full overflow-hidden rounded-2xl border border-dashed border-border/60 bg-muted/30',
+          !isActive && 'flex items-center justify-center py-10 text-xs text-muted-foreground',
+        )}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        {isActive ? (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="h-64 w-full object-contain"
+            />
+            {roi && (
+              <div
+                className={cn(
+                  'absolute border border-emerald-400/70 bg-emerald-400/10',
+                  !roiReady && 'border-rose-400/60 bg-rose-400/10',
+                )}
+                style={{
+                  left: `${roi.x * 100}%`,
+                  top: `${roi.y * 100}%`,
+                  width: `${roi.width * 100}%`,
+                  height: `${roi.height * 100}%`,
+                }}
+              />
+            )}
+          </>
+        ) : (
+          <div>{t('save.ocr.previewPlaceholder')}</div>
+        )}
+      </div>
+
+      <div className="grid gap-3">
+        <div className="text-xs text-muted-foreground">{statusMessage}</div>
+        {resultSummary && (
+          <div className="grid gap-2 rounded-xl border border-border/40 bg-background p-3 text-xs">
+            <div className="text-xs font-semibold text-muted-foreground">
+              {t('save.ocr.result')}
+            </div>
+            <div className="grid gap-1">
+              <div>
+                <Label className="text-xs">{t('save.ocr.series')}</Label>
+                <div className="text-sm font-semibold">{resultSummary.series}</div>
+              </div>
+              <div>
+                <Label className="text-xs">{t('save.ocr.group')}</Label>
+                <div className="text-sm font-semibold">{resultSummary.group}</div>
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {t('save.ocr.rawText', {
+                  value: result?.text?.trim() || UNKNOWN_SKILL_LABEL,
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
