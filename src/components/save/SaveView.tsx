@@ -31,7 +31,7 @@ type SaveViewProps = {
   seriesOptions: string[]
   isLoadingOptions: boolean
   optionsError: '' | 'loadOptions'
-  onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => void
+  onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => string
   onToggleFavorite: (tableKey: string, entryId: string, favorite: boolean) => void
   onUpdateEntry: (
     tableKey: string,
@@ -239,6 +239,7 @@ export function SaveView({
             disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
             language={language}
             onAddEntry={onAddEntry}
+            onUpdateEntry={onUpdateEntry}
           />
 
           <details className="group rounded-2xl border border-border/40 bg-background p-4" data-tour="save-visibility">

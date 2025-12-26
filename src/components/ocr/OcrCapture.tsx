@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Select } from '../ui/select'
 import { cn } from '../../lib/utils'
-import { getSkillLabel, UNKNOWN_SKILL_LABEL } from '../../lib/skills'
+import { getSkillLabel, HIDDEN_SKILL_LABEL, UNKNOWN_SKILL_LABEL } from '../../lib/skills'
 import { matchSkillFromText, preprocessCanvas } from '../../lib/ocr'
 import { useOcrCamera } from '../../hooks/useOcrCamera'
 import type { Worker as TesseractWorker, LoggerMessage } from 'tesseract.js'
@@ -22,7 +22,12 @@ type OcrCaptureProps = {
   groupOptions: string[]
   disabled?: boolean
   language: 'ja' | 'en'
-  onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => void
+  onAddEntry: (tableKey: string, groupSkill: string, seriesSkill: string) => string
+  onUpdateEntry: (
+    tableKey: string,
+    entryId: string,
+    updates: { groupSkill?: string; seriesSkill?: string },
+  ) => void
 }
 
 const MAX_CAPTURE_WIDTH = 720
@@ -94,6 +99,7 @@ export function OcrCapture({
   disabled = false,
   language,
   onAddEntry,
+  onUpdateEntry,
 }: OcrCaptureProps) {
   const { t } = useTranslation()
   const {
@@ -114,6 +120,8 @@ export function OcrCapture({
   const [ocrProgress, setOcrProgress] = useState(0)
   const [ocrError, setOcrError] = useState('')
   const [result, setResult] = useState<{
+    entryId: string
+    tableKey: string
     seriesSkill: string
     groupSkill: string
     text: string
@@ -252,8 +260,8 @@ export function OcrCapture({
       } = await worker.recognize(processedCanvas)
       const seriesSkill = matchSkillFromText(text, seriesOptions)
       const groupSkill = matchSkillFromText(text, groupOptions)
-      onAddEntry(selectedTableKey, groupSkill, seriesSkill)
-      setResult({ seriesSkill, groupSkill, text })
+      const entryId = onAddEntry(selectedTableKey, groupSkill, seriesSkill)
+      setResult({ entryId, tableKey: selectedTableKey, seriesSkill, groupSkill, text })
       setOcrStatus('success')
     } catch {
       setOcrStatus('error')
@@ -283,13 +291,14 @@ export function OcrCapture({
     return t('save.ocr.ready')
   }, [isActive, ocrError, ocrProgress, ocrStatus, roiReady, t])
 
-  const resultSummary = useMemo(() => {
-    if (!result) return null
-    return {
-      series: getSkillLabel(result.seriesSkill, language),
-      group: getSkillLabel(result.groupSkill, language),
-    }
-  }, [language, result])
+  const seriesSelectOptions = useMemo(
+    () => [HIDDEN_SKILL_LABEL, ...seriesOptions],
+    [seriesOptions],
+  )
+  const groupSelectOptions = useMemo(
+    () => [HIDDEN_SKILL_LABEL, ...groupOptions],
+    [groupOptions],
+  )
 
   const deviceOptions = useMemo(() => {
     return devices.map((device, index) => ({
@@ -407,7 +416,7 @@ export function OcrCapture({
 
       <div className="grid gap-3">
         <div className="text-xs text-muted-foreground">{statusMessage}</div>
-        {resultSummary && (
+        {result && (
           <div className="grid gap-2 rounded-xl border border-border/40 bg-background p-3 text-xs">
             <div className="text-xs font-semibold text-muted-foreground">
               {t('save.ocr.result')}
@@ -415,11 +424,45 @@ export function OcrCapture({
             <div className="grid gap-1">
               <div>
                 <Label className="text-xs">{t('save.ocr.series')}</Label>
-                <div className="text-sm font-semibold">{resultSummary.series}</div>
+                <Select
+                  value={result.seriesSkill}
+                  onChange={(event) => {
+                    const nextValue = event.target.value
+                    setResult((prev) => {
+                      if (!prev) return prev
+                      onUpdateEntry(prev.tableKey, prev.entryId, { seriesSkill: nextValue })
+                      return { ...prev, seriesSkill: nextValue }
+                    })
+                  }}
+                  className="mt-1 h-9 text-xs"
+                >
+                  {seriesSelectOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {getSkillLabel(option, language)}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div>
                 <Label className="text-xs">{t('save.ocr.group')}</Label>
-                <div className="text-sm font-semibold">{resultSummary.group}</div>
+                <Select
+                  value={result.groupSkill}
+                  onChange={(event) => {
+                    const nextValue = event.target.value
+                    setResult((prev) => {
+                      if (!prev) return prev
+                      onUpdateEntry(prev.tableKey, prev.entryId, { groupSkill: nextValue })
+                      return { ...prev, groupSkill: nextValue }
+                    })
+                  }}
+                  className="mt-1 h-9 text-xs"
+                >
+                  {groupSelectOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {getSkillLabel(option, language)}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {t('save.ocr.rawText', {

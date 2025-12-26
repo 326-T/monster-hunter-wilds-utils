@@ -74,11 +74,12 @@ export function useTableState() {
   }, [cursor])
 
   const addEntry = useCallback((tableKey: string, groupSkill: string, seriesSkill: string) => {
+    const entryId = createId()
     setTables((prev) => {
       const existing = prev[tableKey] ?? []
       const nextCursorId = existing.reduce((max, entry) => Math.max(max, entry.cursorId), -1) + 1
       const newEntry: TableEntry = {
-        id: createId(),
+        id: entryId,
         groupSkill,
         seriesSkill,
         favorite: false,
@@ -90,6 +91,7 @@ export function useTableState() {
         [tableKey]: [...existing, newEntry],
       }
     })
+    return entryId
   }, [])
 
   const toggleFavorite = useCallback((tableKey: string, entryId: string, favorite: boolean) => {
