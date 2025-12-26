@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Button } from '../ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardContent, CardDescription, CardTitle } from '../ui/card'
 import { Checkbox } from '../ui/checkbox'
 import { Label } from '../ui/label'
 import { ResponsiveSelect } from '../ui/responsive-select'
 import { Select } from '../ui/select'
 import { OcrCapture } from '../ocr/OcrCapture'
+import { SectionCard } from '../ui/section-card'
 import {
   ATTRIBUTES,
   formatDate,
@@ -177,364 +178,379 @@ export function SaveView({
         }}
       />
       <Card className="animate-fade-up">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="space-y-1">
-              <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
-              <CardDescription>{t('save.record.description')}</CardDescription>
+        <CardContent className="space-y-8 pt-6">
+          <SectionCard>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-1">
+                <CardTitle className="heading-serif">{t('save.record.title')}</CardTitle>
+                <CardDescription>{t('save.record.description')}</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setEntryMode('manual')
+                  setRunTour(true)
+                }}
+              >
+                {t('tour.start')}
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEntryMode('manual')
-                setRunTour(true)
-              }}
+          </SectionCard>
+          <SectionCard title={t('save.sections.select')}>
+            <div
+              className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2"
+              data-tour="save-select"
             >
-              {t('tour.start')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          <div
-            className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4 sm:grid-cols-2"
-            data-tour="save-select"
-          >
-            <div className="space-y-2">
-              <Label>{t('filter.weapon')}</Label>
-              <ResponsiveSelect
-                name="selected-weapon"
-                value={selectedWeapon}
-                onChange={setSelectedWeapon}
-                options={WEAPONS.map((weapon) => ({
-                  value: weapon,
-                  label: getWeaponLabel(weapon, language),
-                }))}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-              <Label>{t('filter.attribute')}</Label>
-              <ResponsiveSelect
-                name="selected-attribute"
-                value={selectedAttribute}
-                onChange={setSelectedAttribute}
-                options={ATTRIBUTES.map((attribute) => ({
-                  value: attribute,
-                  label: getAttributeLabel(attribute, language),
-                }))}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-              />
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border/40 bg-background p-4" data-tour="save-current">
-            <div className="flex flex-col gap-2">
-              <div className="text-xs text-muted-foreground">{t('save.selectedTable')}</div>
-              <div className="text-lg font-semibold">
-                {selectedTable ? getTableLabel(selectedTable, language) : ''}
+              <div className="space-y-2">
+                <Label>{t('filter.weapon')}</Label>
+                <ResponsiveSelect
+                  name="selected-weapon"
+                  value={selectedWeapon}
+                  onChange={setSelectedWeapon}
+                  options={WEAPONS.map((weapon) => ({
+                    value: weapon,
+                    label: getWeaponLabel(weapon, language),
+                  }))}
+                  gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+                />
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>{t('save.cursorPosition', { value: currentCursor })}</span>
-                <span>{t('save.entryCount', { count: sortedEntries.length })}</span>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <Label>{t('filter.attribute')}</Label>
+                <ResponsiveSelect
+                  name="selected-attribute"
+                  value={selectedAttribute}
+                  onChange={setSelectedAttribute}
+                  options={ATTRIBUTES.map((attribute) => ({
+                    value: attribute,
+                    label: getAttributeLabel(attribute, language),
+                  }))}
+                  gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+                />
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
-              <Button
-                variant={entryMode === 'manual' ? 'default' : 'ghost'}
-                onClick={() => setEntryMode('manual')}
-                className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
-                size="sm"
-              >
-                {t('save.entryTabs.manual')}
-              </Button>
-              <Button
-                variant={entryMode === 'ocr' ? 'default' : 'ghost'}
-                onClick={() => setEntryMode('ocr')}
-                className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
-                size="sm"
-              >
-                {t('save.entryTabs.ocr')}
-              </Button>
+            <div
+              className="rounded-2xl border border-border/40 bg-background p-4"
+              data-tour="save-current"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="text-xs text-muted-foreground">{t('save.selectedTable')}</div>
+                <div className="text-lg font-semibold">
+                  {selectedTable ? getTableLabel(selectedTable, language) : ''}
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span>{t('save.cursorPosition', { value: currentCursor })}</span>
+                  <span>{t('save.entryCount', { count: sortedEntries.length })}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </SectionCard>
 
-          {entryMode === 'ocr' ? (
-            <OcrCapture
-              selectedTableKey={selectedTableKey}
-              seriesOptions={seriesOptions}
-              groupOptions={groupOptions}
-              disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
-              language={language}
-              onAddEntry={onAddEntry}
-              onUpdateEntry={onUpdateEntry}
-            />
-          ) : (
-            <>
-              <form onSubmit={handleAddEntry} className="grid gap-4" data-tour="save-form">
-                <div className="grid gap-2">
-                  <Label>{t('save.seriesSkill')}</Label>
-                  <ResponsiveSelect
-                    name="series-skill"
-                    value={seriesSelectValue}
-                    onChange={setSeriesSkill}
-                    disabled={Boolean(optionsError)}
-                    placeholder={t('common.select')}
-                    options={seriesSelectOptions.map((option) => ({
-                      value: option,
-                      label: getSkillLabel(option, language),
-                    }))}
-                    gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>{t('save.groupSkill')}</Label>
-                  <ResponsiveSelect
-                    name="group-skill"
-                    value={groupSelectValue}
-                    onChange={setGroupSkill}
-                    disabled={Boolean(optionsError)}
-                    placeholder={t('common.select')}
-                    options={groupSelectOptions.map((option) => ({
-                      value: option,
-                      label: getSkillLabel(option, language),
-                    }))}
-                    gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                  />
-                </div>
-                {!optionsError && isLoadingOptions && (
-                  <div className="text-xs text-muted-foreground">{t('common.loadingOptions')}</div>
-                )}
-                {optionsError && (
-                  <div className="rounded-lg border border-dashed border-border/60 bg-background p-3 text-xs text-muted-foreground">
-                    {optionsErrorMessage}
-                  </div>
-                )}
-
-                <details
-                  className="group rounded-2xl border border-border/40 bg-background p-4"
-                  data-tour="save-visibility"
-                >
-                  <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
-                    <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
-                    <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
-                      ▾
-                    </span>
-                  </summary>
-                  <div className="grid gap-4 pt-4">
-                    <div className="text-xs text-muted-foreground">
-                      {t('save.visibility.note', {
-                        label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
-                      })}
-                    </div>
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 text-xs"
-                              onClick={showAllSeries}
-                            >
-                              {t('save.showAll')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 text-xs"
-                              onClick={hideAllSeries}
-                            >
-                              {t('save.hideAll')}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
-                          <span>{t('common.total', { count: seriesOptions.length })}</span>
-                        </div>
-                        <div className="max-h-40 space-y-2 overflow-y-auto">
-                          {seriesOptions.length === 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              {t('common.noOptions')}
-                            </div>
-                          )}
-                          {seriesOptions.map((option) => (
-                            <label key={option} className="flex items-center gap-2 text-xs">
-                              <Checkbox
-                                checked={visibleSeriesSet.has(option)}
-                                onChange={() => toggleSeriesVisibility(option)}
-                              />
-                              <span className="truncate">{getSkillLabel(option, language)}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 text-xs"
-                              onClick={showAllGroup}
-                            >
-                              {t('save.showAll')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-3 text-xs"
-                              onClick={hideAllGroup}
-                            >
-                              {t('save.hideAll')}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
-                          <span>{t('common.total', { count: groupOptions.length })}</span>
-                        </div>
-                        <div className="max-h-40 space-y-2 overflow-y-auto">
-                          {groupOptions.length === 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              {t('common.noOptions')}
-                            </div>
-                          )}
-                          {groupOptions.map((option) => (
-                            <label key={option} className="flex items-center gap-2 text-xs">
-                              <Checkbox
-                                checked={visibleGroupSet.has(option)}
-                                onChange={() => toggleGroupVisibility(option)}
-                              />
-                              <span className="truncate">{getSkillLabel(option, language)}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </details>
-
+          <SectionCard title={t('save.sections.register')}>
+            <div className="flex justify-center">
+              <div className="inline-flex items-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
                 <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={!resolvedGroupSkill || !resolvedSeriesSkill}
+                  variant={entryMode === 'manual' ? 'default' : 'ghost'}
+                  onClick={() => setEntryMode('manual')}
+                  className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+                  size="sm"
                 >
-                  {t('save.addEntry')}
+                  {t('save.entryTabs.manual')}
                 </Button>
-              </form>
-            </>
-          )}
-
-          <div className="flex flex-wrap items-center justify-between gap-3" data-tour="save-toggle">
-            <div className="text-sm text-muted-foreground">
-              {t('save.passedNote')}
+                <Button
+                  variant={entryMode === 'ocr' ? 'default' : 'ghost'}
+                  onClick={() => setEntryMode('ocr')}
+                  className="w-28 rounded-none px-4 first:rounded-l-full last:rounded-r-full"
+                  size="sm"
+                >
+                  {t('save.entryTabs.ocr')}
+                </Button>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowPassed((prev) => !prev)}>
-              {showPassed ? t('save.hidePassed') : t('save.showPassed')}
-            </Button>
-          </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="save-table">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">{t('save.headers.series')}</th>
-                  <th className="px-4 py-3">{t('save.headers.group')}</th>
-                  <th className="px-4 py-3">{t('save.headers.favorite')}</th>
-                  <th className="px-4 py-3">{t('save.headers.createdAt')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleEntries.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-4 py-6 text-center text-sm text-muted-foreground"
-                    >
-                      {t('common.noEntries')}
-                    </td>
-                  </tr>
-                )}
-                {visibleEntries.map((entry) => {
-                  const isPassed = entry.cursorId < currentCursor
-                  const seriesValue = seriesSelectOptions.includes(entry.seriesSkill)
-                    ? entry.seriesSkill
-                    : HIDDEN_SKILL_LABEL
-                  const groupValue = groupSelectOptions.includes(entry.groupSkill)
-                    ? entry.groupSkill
-                    : HIDDEN_SKILL_LABEL
-                  return (
-                    <tr
-                      key={entry.id}
-                      className={cn(
-                        'border-t border-border/50 bg-background',
-                        isPassed && 'text-muted-foreground',
-                      )}
-                    >
-                      <td className="px-4 py-3">{entry.cursorId + 1}</td>
-                      <td className="px-4 py-3">
-                        <Select
-                          value={seriesValue}
-                          onChange={(event) =>
-                            onUpdateEntry(selectedTableKey, entry.id, {
-                              seriesSkill: event.target.value,
-                            })
-                          }
-                          disabled={Boolean(optionsError)}
-                          className="h-9 text-xs"
-                        >
-                          {seriesSelectOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {getSkillLabel(option, language)}
-                            </option>
-                          ))}
-                        </Select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Select
-                          value={groupValue}
-                          onChange={(event) =>
-                            onUpdateEntry(selectedTableKey, entry.id, {
-                              groupSkill: event.target.value,
-                            })
-                          }
-                          disabled={Boolean(optionsError)}
-                          className="h-9 text-xs"
-                        >
-                          {groupSelectOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {getSkillLabel(option, language)}
-                            </option>
-                          ))}
-                        </Select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={entry.favorite}
-                            onChange={(event) =>
-                              onToggleFavorite(selectedTableKey, entry.id, event.target.checked)
-                            }
-                          />
-                          <span className="text-xs">{entry.favorite ? t('common.favorite') : ''}</span>
+            {entryMode === 'ocr' ? (
+              <OcrCapture
+                selectedTableKey={selectedTableKey}
+                seriesOptions={seriesOptions}
+                groupOptions={groupOptions}
+                disabled={!selectedTableKey || isLoadingOptions || Boolean(optionsError)}
+                language={language}
+                onAddEntry={onAddEntry}
+                onUpdateEntry={onUpdateEntry}
+              />
+            ) : (
+              <>
+                <form onSubmit={handleAddEntry} className="grid gap-4" data-tour="save-form">
+                  <div className="grid gap-2">
+                    <Label>{t('save.seriesSkill')}</Label>
+                    <ResponsiveSelect
+                      name="series-skill"
+                      value={seriesSelectValue}
+                      onChange={setSeriesSkill}
+                      disabled={Boolean(optionsError)}
+                      placeholder={t('common.select')}
+                      options={seriesSelectOptions.map((option) => ({
+                        value: option,
+                        label: getSkillLabel(option, language),
+                      }))}
+                      gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t('save.groupSkill')}</Label>
+                    <ResponsiveSelect
+                      name="group-skill"
+                      value={groupSelectValue}
+                      onChange={setGroupSkill}
+                      disabled={Boolean(optionsError)}
+                      placeholder={t('common.select')}
+                      options={groupSelectOptions.map((option) => ({
+                        value: option,
+                        label: getSkillLabel(option, language),
+                      }))}
+                      gridClassName="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    />
+                  </div>
+                  {!optionsError && isLoadingOptions && (
+                    <div className="text-xs text-muted-foreground">
+                      {t('common.loadingOptions')}
+                    </div>
+                  )}
+                  {optionsError && (
+                    <div className="rounded-lg border border-dashed border-border/60 bg-background p-3 text-xs text-muted-foreground">
+                      {optionsErrorMessage}
+                    </div>
+                  )}
+
+                  <details
+                    className="group rounded-2xl border border-border/40 bg-background p-4"
+                    data-tour="save-visibility"
+                  >
+                    <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
+                      <div className="text-sm font-semibold">{t('save.visibility.title')}</div>
+                      <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
+                        ▾
+                      </span>
+                    </summary>
+                    <div className="grid gap-4 pt-4">
+                      <div className="text-xs text-muted-foreground">
+                        {t('save.visibility.note', {
+                          label: getSkillLabel(HIDDEN_SKILL_LABEL, language),
+                        })}
+                      </div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-sm font-semibold">{t('save.seriesSkill')}</div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={showAllSeries}
+                              >
+                                {t('save.showAll')}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={hideAllSeries}
+                              >
+                                {t('save.hideAll')}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            <span>{t('common.visible', { count: visibleSeriesOptions.length })}</span>
+                            <span>{t('common.total', { count: seriesOptions.length })}</span>
+                          </div>
+                          <div className="max-h-40 space-y-2 overflow-y-auto">
+                            {seriesOptions.length === 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('common.noOptions')}
+                              </div>
+                            )}
+                            {seriesOptions.map((option) => (
+                              <label key={option} className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={visibleSeriesSet.has(option)}
+                                  onChange={() => toggleSeriesVisibility(option)}
+                                />
+                                <span className="truncate">
+                                  {getSkillLabel(option, language)}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {formatDate(entry.createdAt, language)}
+                        <div className="grid gap-3 rounded-2xl border border-border/40 bg-background p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-sm font-semibold">{t('save.groupSkill')}</div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={showAllGroup}
+                              >
+                                {t('save.showAll')}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={hideAllGroup}
+                              >
+                                {t('save.hideAll')}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            <span>{t('common.visible', { count: visibleGroupOptions.length })}</span>
+                            <span>{t('common.total', { count: groupOptions.length })}</span>
+                          </div>
+                          <div className="max-h-40 space-y-2 overflow-y-auto">
+                            {groupOptions.length === 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                {t('common.noOptions')}
+                              </div>
+                            )}
+                            {groupOptions.map((option) => (
+                              <label key={option} className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={visibleGroupSet.has(option)}
+                                  onChange={() => toggleGroupVisibility(option)}
+                                />
+                                <span className="truncate">
+                                  {getSkillLabel(option, language)}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!resolvedGroupSkill || !resolvedSeriesSkill}
+                  >
+                    {t('save.addEntry')}
+                  </Button>
+                </form>
+              </>
+            )}
+          </SectionCard>
+
+          <SectionCard title={t('save.sections.results')}>
+            <div className="flex flex-wrap items-center justify-between gap-3" data-tour="save-toggle">
+              <div className="text-sm text-muted-foreground">{t('save.passedNote')}</div>
+              <Button variant="outline" size="sm" onClick={() => setShowPassed((prev) => !prev)}>
+                {showPassed ? t('save.hidePassed') : t('save.showPassed')}
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="save-table">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">#</th>
+                    <th className="px-4 py-3">{t('save.headers.series')}</th>
+                    <th className="px-4 py-3">{t('save.headers.group')}</th>
+                    <th className="px-4 py-3">{t('save.headers.favorite')}</th>
+                    <th className="px-4 py-3">{t('save.headers.createdAt')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleEntries.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-6 text-center text-sm text-muted-foreground"
+                      >
+                        {t('common.noEntries')}
                       </td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                  {visibleEntries.map((entry) => {
+                    const isPassed = entry.cursorId < currentCursor
+                    const seriesValue = seriesSelectOptions.includes(entry.seriesSkill)
+                      ? entry.seriesSkill
+                      : HIDDEN_SKILL_LABEL
+                    const groupValue = groupSelectOptions.includes(entry.groupSkill)
+                      ? entry.groupSkill
+                      : HIDDEN_SKILL_LABEL
+                    return (
+                      <tr
+                        key={entry.id}
+                        className={cn(
+                          'border-t border-border/50 bg-background',
+                          isPassed && 'text-muted-foreground',
+                        )}
+                      >
+                        <td className="px-4 py-3">{entry.cursorId + 1}</td>
+                        <td className="px-4 py-3">
+                          <Select
+                            value={seriesValue}
+                            onChange={(event) =>
+                              onUpdateEntry(selectedTableKey, entry.id, {
+                                seriesSkill: event.target.value,
+                              })
+                            }
+                            disabled={Boolean(optionsError)}
+                            className="h-9 text-xs"
+                          >
+                            {seriesSelectOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {getSkillLabel(option, language)}
+                              </option>
+                            ))}
+                          </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Select
+                            value={groupValue}
+                            onChange={(event) =>
+                              onUpdateEntry(selectedTableKey, entry.id, {
+                                groupSkill: event.target.value,
+                              })
+                            }
+                            disabled={Boolean(optionsError)}
+                            className="h-9 text-xs"
+                          >
+                            {groupSelectOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {getSkillLabel(option, language)}
+                              </option>
+                            ))}
+                          </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={entry.favorite}
+                              onChange={(event) =>
+                                onToggleFavorite(selectedTableKey, entry.id, event.target.checked)
+                              }
+                            />
+                            <span className="text-xs">
+                              {entry.favorite ? t('common.favorite') : ''}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {formatDate(entry.createdAt, language)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
         </CardContent>
       </Card>
     </div>

@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardContent, CardDescription, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { ResponsiveSelect } from '../ui/responsive-select'
+import { SectionCard } from '../ui/section-card'
 import {
   allTables,
   ATTRIBUTES,
@@ -100,111 +101,125 @@ export function CursorView({ tables, cursor, onAdvanceCursor }: CursorViewProps)
         }}
       />
       <Card className="animate-fade-up">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="space-y-1">
-              <CardTitle className="heading-serif">
-                {t('cursor.title', { value: activeCursor })}
-              </CardTitle>
-              <CardDescription>{t('cursor.description')}</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
-              {t('tour.start')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2" data-tour="cursor-filters">
-            <div className="space-y-2">
-              <Label>{t('filter.weapon')}</Label>
-              <ResponsiveSelect
-                name="filter-weapon"
-                value={weaponFilter}
-                onChange={setWeaponFilter}
-                options={[
-                  { value: 'all', label: t('common.all') },
-                  ...WEAPONS.map((weapon) => ({
-                    value: weapon,
-                    label: getWeaponLabel(weapon, language),
-                  })),
-                ]}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-              <Label>{t('filter.attribute')}</Label>
-              <ResponsiveSelect
-                name="filter-attribute"
-                value={attributeFilter}
-                onChange={setAttributeFilter}
-                options={[
-                  { value: 'all', label: t('common.all') },
-                  ...ATTRIBUTES.map((attribute) => ({
-                    value: attribute,
-                    label: getAttributeLabel(attribute, language),
-                  })),
-                ]}
-                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>{t('cursor.candidates', { count: cursorCandidates.length })}</span>
-            <span>{t('cursor.nullCount', { count: nullCount })}</span>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2" data-tour="cursor-candidates">
-            {cursorCandidates.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border/60 bg-background p-6 text-center text-sm text-muted-foreground">
-                {t('cursor.noCandidates')}
+        <CardContent className="space-y-8 pt-6">
+          <SectionCard>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-1">
+                <CardTitle className="heading-serif">
+                  {t('cursor.title')}
+                </CardTitle>
+                <CardDescription>{t('cursor.description', { value: activeCursor })}</CardDescription>
               </div>
-            )}
-            {cursorCandidates.map(({ table, entry }) => (
-              <div key={table.key} className="rounded-2xl border border-border/50 bg-background p-4">
-                <div className="grid gap-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-semibold">
-                        {getWeaponLabel(table.weapon, language)}
+              <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+                {t('tour.start')}
+              </Button>
+            </div>
+          </SectionCard>
+
+          <SectionCard title={t('cursor.sections.filters')}>
+            <div className="grid gap-3 sm:grid-cols-2" data-tour="cursor-filters">
+              <div className="space-y-2">
+                <Label>{t('filter.weapon')}</Label>
+                <ResponsiveSelect
+                  name="filter-weapon"
+                  value={weaponFilter}
+                  onChange={setWeaponFilter}
+                  options={[
+                    { value: 'all', label: t('common.all') },
+                    ...WEAPONS.map((weapon) => ({
+                      value: weapon,
+                      label: getWeaponLabel(weapon, language),
+                    })),
+                  ]}
+                  gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <Label>{t('filter.attribute')}</Label>
+                <ResponsiveSelect
+                  name="filter-attribute"
+                  value={attributeFilter}
+                  onChange={setAttributeFilter}
+                  options={[
+                    { value: 'all', label: t('common.all') },
+                    ...ATTRIBUTES.map((attribute) => ({
+                      value: attribute,
+                      label: getAttributeLabel(attribute, language),
+                    })),
+                  ]}
+                  gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>{t('cursor.candidates', { count: cursorCandidates.length })}</span>
+              <span>{t('cursor.nullCount', { count: nullCount })}</span>
+            </div>
+          </SectionCard>
+
+          <SectionCard title={t('cursor.sections.candidates')}>
+            <div className="grid gap-4 md:grid-cols-2" data-tour="cursor-candidates">
+              {cursorCandidates.length === 0 && (
+                <div className="rounded-xl border border-dashed border-border/60 bg-background p-6 text-center text-sm text-muted-foreground">
+                  {t('cursor.noCandidates')}
+                </div>
+              )}
+              {cursorCandidates.map(({ table, entry }) => (
+                <div
+                  key={table.key}
+                  className="rounded-2xl border border-border/50 bg-background p-4"
+                >
+                  <div className="grid gap-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold">
+                          {getWeaponLabel(table.weapon, language)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {getAttributeLabel(table.attribute, language)}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {getAttributeLabel(table.attribute, language)}
+                      {entry.favorite && <Badge>{t('common.favorite')}</Badge>}
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div>
+                        <span className="text-xs text-muted-foreground">
+                          {t('save.headers.series')}
+                        </span>
+                        <div className="font-medium">
+                          {getSkillLabel(entry.seriesSkill, language)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground">
+                          {t('save.headers.group')}
+                        </span>
+                        <div className="font-medium">
+                          {getSkillLabel(entry.groupSkill, language)}
+                        </div>
                       </div>
                     </div>
-                    {entry.favorite && <Badge>{t('common.favorite')}</Badge>}
-                  </div>
-                  <div className="grid gap-2 text-sm">
-                    <div>
-                      <span className="text-xs text-muted-foreground">{t('save.headers.series')}</span>
-                      <div className="font-medium">
-                        {getSkillLabel(entry.seriesSkill, language)}
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {t('cursor.addedAt', {
+                          value: formatDate(entry.createdAt, language),
+                        })}
+                      </span>
+                      <Button size="sm" onClick={onAdvanceCursor}>
+                        {t('cursor.advanceButton')}
+                      </Button>
                     </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground">{t('save.headers.group')}</span>
-                      <div className="font-medium">{getSkillLabel(entry.groupSkill, language)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {t('cursor.addedAt', {
-                        value: formatDate(entry.createdAt, language),
-                      })}
-                    </span>
-                    <Button size="sm" onClick={onAdvanceCursor}>
-                      {t('cursor.advanceButton')}
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
-            {t('cursor.advanceNote', {
-              label: getSkillLabel(UNKNOWN_SKILL_LABEL, language),
-            })}
-          </div>
+            <div className="rounded-xl border border-border/50 bg-background p-4 text-xs text-muted-foreground">
+              {t('cursor.advanceNote', {
+                label: getSkillLabel(UNKNOWN_SKILL_LABEL, language),
+              })}
+            </div>
+          </SectionCard>
         </CardContent>
       </Card>
     </div>

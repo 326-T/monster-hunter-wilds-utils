@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardContent, CardDescription, CardTitle } from '../ui/card'
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { ResponsiveSelect } from '../ui/responsive-select'
+import { SectionCard } from '../ui/section-card'
 import {
   allTables,
   ATTRIBUTES,
@@ -136,154 +137,163 @@ export function VerifyView({ tables, onExport, onImport, onToggleFavorite }: Ver
           skip: t('tour.skip'),
         }}
       />
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="space-y-1">
-            <CardTitle className="heading-serif">{t('verify.title')}</CardTitle>
-            <CardDescription>{t('verify.description')}</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
-            {t('tour.start')}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div
-          className="flex flex-wrap items-center justify-between gap-3"
-          data-tour="verify-export"
-        >
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              {t('verify.export')}
+      <CardContent className="space-y-6 pt-6">
+        <SectionCard>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-1">
+              <CardTitle className="heading-serif">{t('verify.title')}</CardTitle>
+              <CardDescription>{t('verify.description')}</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setRunTour(true)}>
+              {t('tour.start')}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {t('verify.import')}
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={handleImport}
-            />
           </div>
-          {importMessageKey && (
-            <span className="text-xs text-muted-foreground">{t(importMessageKey)}</span>
-          )}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2" data-tour="verify-filters">
-          <div className="space-y-2">
-            <Label>{t('filter.weapon')}</Label>
-            <ResponsiveSelect
-              name="filter-weapon"
-              value={weaponFilter}
-              onChange={setWeaponFilter}
-              options={[
-                { value: 'all', label: t('common.all') },
-                ...WEAPONS.map((weapon) => ({
-                  value: weapon,
-                  label: getWeaponLabel(weapon, language),
-                })),
-              ]}
-              gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-            />
+        </SectionCard>
+
+        <SectionCard title={t('verify.sections.transfer')}>
+          <div
+            className="flex flex-wrap items-center justify-between gap-3"
+            data-tour="verify-export"
+          >
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                {t('verify.export')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {t('verify.import')}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </div>
+            {importMessageKey && (
+              <span className="text-xs text-muted-foreground">{t(importMessageKey)}</span>
+            )}
           </div>
-          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-            <Label>{t('filter.attribute')}</Label>
-            <ResponsiveSelect
-              name="filter-attribute"
-              value={attributeFilter}
-              onChange={setAttributeFilter}
-              options={[
-                { value: 'all', label: t('common.all') },
-                ...ATTRIBUTES.map((attribute) => ({
-                  value: attribute,
-                  label: getAttributeLabel(attribute, language),
-                })),
-              ]}
-              gridClassName="sm:grid-cols-3 lg:grid-cols-4"
-            />
+        </SectionCard>
+
+        <SectionCard title={t('verify.sections.filters')}>
+          <div className="grid gap-3 sm:grid-cols-2" data-tour="verify-filters">
+            <div className="space-y-2">
+              <Label>{t('filter.weapon')}</Label>
+              <ResponsiveSelect
+                name="filter-weapon"
+                value={weaponFilter}
+                onChange={setWeaponFilter}
+                options={[
+                  { value: 'all', label: t('common.all') },
+                  ...WEAPONS.map((weapon) => ({
+                    value: weapon,
+                    label: getWeaponLabel(weapon, language),
+                  })),
+                ]}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <Label>{t('filter.attribute')}</Label>
+              <ResponsiveSelect
+                name="filter-attribute"
+                value={attributeFilter}
+                onChange={setAttributeFilter}
+                options={[
+                  { value: 'all', label: t('common.all') },
+                  ...ATTRIBUTES.map((attribute) => ({
+                    value: attribute,
+                    label: getAttributeLabel(attribute, language),
+                  })),
+                ]}
+                gridClassName="sm:grid-cols-3 lg:grid-cols-4"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{t('verify.cursors', { count: cursorIds.length })}</span>
-          <span>{t('verify.columns', { count: filteredTables.length })}</span>
-        </div>
-        <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="verify-table">
-          <table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
-            <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">{t('verify.header.cursor')}</th>
-                {filteredTables.map((table) => (
-                  <th key={table.key} className="px-3 py-2">
-                    <div className="text-[10px] text-muted-foreground">
-                      {getTableKeyLabel(table, language)}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {cursorIds.length === 0 && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{t('verify.cursors', { count: cursorIds.length })}</span>
+            <span>{t('verify.columns', { count: filteredTables.length })}</span>
+          </div>
+        </SectionCard>
+
+        <SectionCard title={t('verify.sections.table')}>
+          <div className="overflow-x-auto rounded-2xl border border-border/60" data-tour="verify-table">
+            <table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
+              <thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
                 <tr>
-                  <td
-                    colSpan={Math.max(1, filteredTables.length + 1)}
-                    className="px-4 py-6 text-center text-sm text-muted-foreground"
-                  >
-                    {t('common.noEntries')}
-                  </td>
+                  <th className="px-4 py-3">{t('verify.header.cursor')}</th>
+                  {filteredTables.map((table) => (
+                    <th key={table.key} className="px-3 py-2">
+                      <div className="text-[10px] text-muted-foreground">
+                        {getTableKeyLabel(table, language)}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
-              )}
-              {cursorIds.map((cursorId) => (
-                <tr key={cursorId} className="border-t border-border/50 bg-background">
-                  <td className="px-3 py-2">{cursorId + 1}</td>
-                  {filteredTables.map((table) => {
-                    const entry = entryMaps.get(table.key)?.get(cursorId)
-                    return (
-                      <td key={table.key} className="px-3 py-2 align-top">
-                        {entry ? (
-                          <button
-                            type="button"
-                            onClick={() => onToggleFavorite(table.key, entry.id, !entry.favorite)}
-                            className={`grid w-full gap-1 rounded-lg border p-2 text-left text-[10px] transition-colors ${
-                              entry.favorite
-                                ? 'border-amber-200 bg-amber-50/70 text-amber-900'
-                                : 'border-border/40 bg-background hover:border-border/70 hover:bg-muted/40'
-                            }`}
-                            title={
-                              entry.favorite
-                                ? t('verify.favorite.remove')
-                                : t('verify.favorite.add')
-                            }
-                          >
-                            <div className="text-[11px] text-muted-foreground">
-                              {t('save.headers.series')}
-                            </div>
-                            <div className="text-[11px] font-medium">
-                              {getSkillLabel(entry.seriesSkill, language)}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {t('save.headers.group')}
-                            </div>
-                            <div className="text-[11px] font-medium">
-                              {getSkillLabel(entry.groupSkill, language)}
-                            </div>
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground">-</span>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {cursorIds.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={Math.max(1, filteredTables.length + 1)}
+                      className="px-4 py-6 text-center text-sm text-muted-foreground"
+                    >
+                      {t('common.noEntries')}
+                    </td>
+                  </tr>
+                )}
+                {cursorIds.map((cursorId) => (
+                  <tr key={cursorId} className="border-t border-border/50 bg-background">
+                    <td className="px-3 py-2">{cursorId + 1}</td>
+                    {filteredTables.map((table) => {
+                      const entry = entryMaps.get(table.key)?.get(cursorId)
+                      return (
+                        <td key={table.key} className="px-3 py-2 align-top">
+                          {entry ? (
+                            <button
+                              type="button"
+                              onClick={() => onToggleFavorite(table.key, entry.id, !entry.favorite)}
+                              className={`grid w-full gap-1 rounded-lg border p-2 text-left text-[10px] transition-colors ${
+                                entry.favorite
+                                  ? 'border-amber-200 bg-amber-50/70 text-amber-900'
+                                  : 'border-border/40 bg-background hover:border-border/70 hover:bg-muted/40'
+                              }`}
+                              title={
+                                entry.favorite
+                                  ? t('verify.favorite.remove')
+                                  : t('verify.favorite.add')
+                              }
+                            >
+                              <div className="text-[11px] text-muted-foreground">
+                                {t('save.headers.series')}
+                              </div>
+                              <div className="text-[11px] font-medium">
+                                {getSkillLabel(entry.seriesSkill, language)}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {t('save.headers.group')}
+                              </div>
+                              <div className="text-[11px] font-medium">
+                                {getSkillLabel(entry.groupSkill, language)}
+                              </div>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
       </CardContent>
     </Card>
   )
