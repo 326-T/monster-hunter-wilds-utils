@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LoggerMessage, Worker as TesseractWorker } from "tesseract.js";
 import { useOcrCamera } from "../../hooks/useOcrCamera";
-import { matchSkillFromText, preprocessCanvas } from "../../lib/ocr";
+import {
+	matchSkillFromText,
+	matchSkillFromTextDetailed,
+	type SkillMatch,
+	preprocessCanvas,
+} from "../../lib/ocr";
 import {
 	getSkillLabel,
 	HIDDEN_SKILL_LABEL,
@@ -43,7 +48,12 @@ const MIN_ROI_SIZE = 0.05;
 const OCR_LANGUAGE = "jpn";
 const AUTO_WAIT_TOKEN = "????? ?????";
 const AUTO_WAIT_PLACEHOLDER_MIN = 2;
-const AUTO_WAIT_PLACEHOLDER_RATIO = 0.5;
+const AUTO_WAIT_PLACEHOLDER_RATIO = 0.3;
+const AUTO_WAIT_PLACEHOLDER_RUN = 2;
+const AUTO_WAIT_SHORT_LENGTH = 8;
+const AUTO_SKILL_MIN_SUBSTRING = 2;
+const AUTO_SKILL_MIN_BIGRAM = 2;
+const AUTO_SKILL_MIN_MONOGRAM = 3;
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -58,14 +68,34 @@ const isAutoWaitText = (value: string) => {
 	}
 	const compact = value.replace(/\s+/g, "");
 	if (!compact) return false;
+	const runRegex = new RegExp(`[?？2]{${AUTO_WAIT_PLACEHOLDER_RUN},}`);
 	const placeholderMatches = compact.match(/[?？2]/g);
 	const placeholderCount = placeholderMatches?.length ?? 0;
 	if (placeholderCount < AUTO_WAIT_PLACEHOLDER_MIN) return false;
-	return placeholderCount / compact.length >= AUTO_WAIT_PLACEHOLDER_RATIO;
+	const placeholderRatio = placeholderCount / compact.length;
+	if (compact.length <= AUTO_WAIT_SHORT_LENGTH && runRegex.test(compact)) {
+		return true;
+	}
+	if (runRegex.test(compact))
+		return placeholderRatio >= AUTO_WAIT_PLACEHOLDER_RATIO;
+	return placeholderRatio >= AUTO_WAIT_PLACEHOLDER_RATIO;
 };
 
 const logOcrText = (source: "auto" | "manual", text: string) => {
 	console.info(`[OCR:${source}]`, text);
+};
+
+const isSkillMatchStrong = (match: SkillMatch) => {
+	if (match.mode === "substring") {
+		return match.score >= AUTO_SKILL_MIN_SUBSTRING;
+	}
+	if (match.mode === "bigram") {
+		return match.score >= AUTO_SKILL_MIN_BIGRAM;
+	}
+	if (match.mode === "monogram") {
+		return match.score >= AUTO_SKILL_MIN_MONOGRAM;
+	}
+	return false;
 };
 
 const IconPlay = (props: React.SVGProps<SVGSVGElement>) => (
@@ -331,30 +361,35 @@ export function OcrCapture({
 					logOcrText("auto", text);
 					if (cancelled) return;
 
-					if (isAutoWaitText(text)) {
+					const waitDetected = isAutoWaitText(text);
+					if (waitDetected) {
 						if (autoState !== "waiting") {
 							setAutoState("waiting");
 						}
 						return;
 					}
-
-					const seriesSkill = matchSkillFromText(text, seriesOptions);
-					const groupSkill = matchSkillFromText(text, groupOptions);
+					const seriesMatch = matchSkillFromTextDetailed(text, seriesOptions);
+					const groupMatch = matchSkillFromTextDetailed(text, groupOptions);
 					const hasSkills =
-						seriesSkill !== UNKNOWN_SKILL_LABEL &&
-						groupSkill !== UNKNOWN_SKILL_LABEL;
-					if (!hasSkills || autoState !== "waiting") return;
+						isSkillMatchStrong(seriesMatch) && isSkillMatchStrong(groupMatch);
 
-					const entryId = onAddEntry(selectedTableKey, groupSkill, seriesSkill);
-					setResult({
-						entryId,
-						tableKey: selectedTableKey,
-						seriesSkill,
-						groupSkill,
-						text,
-					});
-					setAutoState("locked");
-					setOcrStatus("success");
+					if (hasSkills) {
+						if (autoState !== "waiting") return;
+						const entryId = onAddEntry(
+							selectedTableKey,
+							groupMatch.skill,
+							seriesMatch.skill,
+						);
+						setResult({
+							entryId,
+							tableKey: selectedTableKey,
+							seriesSkill: seriesMatch.skill,
+							groupSkill: groupMatch.skill,
+							text,
+						});
+						setAutoState("locked");
+						setOcrStatus("success");
+					}
 				} catch {
 					if (!cancelled) {
 						setOcrStatus("error");

@@ -10,6 +10,13 @@ type MatchResult = {
 	score: number;
 };
 
+export type SkillMatch = {
+	skill: string;
+	score: number;
+	length: number;
+	mode: "substring" | "bigram" | "monogram" | "none";
+};
+
 const buildBigramCounts = (text: string) => {
 	const counts = new Map<string, number>();
 	if (text.length < 2) return counts;
@@ -57,8 +64,23 @@ export const normalizeOcrText = (value: string) =>
 	value.normalize("NFKC").toLowerCase().replace(NORMALIZE_PATTERN, "");
 
 export const matchSkillFromText = (text: string, options: string[]): string => {
+	const match = matchSkillFromTextDetailed(text, options);
+	return match.skill;
+};
+
+export const matchSkillFromTextDetailed = (
+	text: string,
+	options: string[],
+): SkillMatch => {
 	const normalizedText = normalizeOcrText(text);
-	if (!normalizedText) return UNKNOWN_SKILL_LABEL;
+	if (!normalizedText) {
+		return {
+			skill: UNKNOWN_SKILL_LABEL,
+			score: 0,
+			length: 0,
+			mode: "none",
+		};
+	}
 
 	let bestSubstring: MatchResult = { skill: "", length: 0, score: 0 };
 	let bestScore: MatchResult = { skill: "", length: 0, score: 0 };
@@ -142,10 +164,36 @@ export const matchSkillFromText = (text: string, options: string[]): string => {
 		}
 	}
 
-	if (bestSubstring.skill) return bestSubstring.skill;
-	if (bestScore.score >= 1) return bestScore.skill;
-	if (bestMonoScore.score >= 1) return bestMonoScore.skill;
-	return UNKNOWN_SKILL_LABEL;
+	if (bestSubstring.skill) {
+		return {
+			skill: bestSubstring.skill,
+			score: bestSubstring.length,
+			length: bestSubstring.length,
+			mode: "substring",
+		};
+	}
+	if (bestScore.score >= 1) {
+		return {
+			skill: bestScore.skill,
+			score: bestScore.score,
+			length: bestScore.length,
+			mode: "bigram",
+		};
+	}
+	if (bestMonoScore.score >= 1) {
+		return {
+			skill: bestMonoScore.skill,
+			score: bestMonoScore.score,
+			length: bestMonoScore.length,
+			mode: "monogram",
+		};
+	}
+	return {
+		skill: UNKNOWN_SKILL_LABEL,
+		score: 0,
+		length: 0,
+		mode: "none",
+	};
 };
 
 const binarizeOnCpu = (canvas: HTMLCanvasElement, threshold: number) => {
