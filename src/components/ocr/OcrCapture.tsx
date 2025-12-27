@@ -54,6 +54,12 @@ const AUTO_WAIT_SHORT_LENGTH = 8;
 const AUTO_SKILL_MIN_SUBSTRING = 2;
 const AUTO_SKILL_MIN_BIGRAM = 2;
 const AUTO_SKILL_MIN_MONOGRAM = 3;
+const AUTO_SPEEDS = [
+	{ key: "slow", ms: 2000 },
+	{ key: "medium", ms: 1000 },
+	{ key: "fast", ms: 500 },
+] as const;
+type AutoSpeedKey = (typeof AUTO_SPEEDS)[number]["key"];
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
@@ -202,6 +208,7 @@ export function OcrCapture({
 	const [ocrError, setOcrError] = useState("");
 	const [autoMode, setAutoMode] = useState(false);
 	const [autoState, setAutoState] = useState<"waiting" | "locked">("waiting");
+	const [autoSpeed, setAutoSpeed] = useState<AutoSpeedKey>("medium");
 	const [result, setResult] = useState<{
 		entryId: string;
 		cursorId: number;
@@ -222,6 +229,12 @@ export function OcrCapture({
 	const canCapture = roiReady && isActive && !disabled;
 	const autoReady =
 		autoMode && canCapture && Boolean(selectedTableKey) && !disabled;
+	const autoIntervalMs =
+		AUTO_SPEEDS.find((speed) => speed.key === autoSpeed)?.ms ?? 1000;
+	const autoSpeedIndex = Math.max(
+		0,
+		AUTO_SPEEDS.findIndex((speed) => speed.key === autoSpeed),
+	);
 
 	const initWorker = useCallback(async () => {
 		if (workerRef.current) return workerRef.current;
@@ -401,7 +414,7 @@ export function OcrCapture({
 					autoInFlightRef.current = false;
 				}
 			})();
-		}, 1000);
+		}, autoIntervalMs);
 
 		return () => {
 			cancelled = true;
@@ -409,6 +422,7 @@ export function OcrCapture({
 			autoInFlightRef.current = false;
 		};
 	}, [
+		autoIntervalMs,
 		autoReady,
 		autoState,
 		captureCanvas,
@@ -614,6 +628,37 @@ export function OcrCapture({
 						>
 							{autoMode ? t("save.ocr.auto.on") : t("save.ocr.auto.off")}
 						</Button>
+					</div>
+					<div className="grid gap-2 text-xs">
+						<div className="flex items-center justify-between gap-2">
+							<Label htmlFor="ocr-auto-speed" className="text-xs">
+								{t("save.ocr.auto.speedLabel")}
+							</Label>
+							<span className="text-xs text-muted-foreground">
+								{t(`save.ocr.auto.speed.${autoSpeed}`)}
+							</span>
+						</div>
+						<input
+							id="ocr-auto-speed"
+							type="range"
+							min={0}
+							max={AUTO_SPEEDS.length - 1}
+							step={1}
+							value={autoSpeedIndex}
+							onChange={(event) => {
+								const index = Number(event.target.value);
+								const next = AUTO_SPEEDS[index]?.key ?? "medium";
+								setAutoSpeed(next);
+							}}
+							className="h-2 w-full cursor-pointer accent-foreground"
+						/>
+						<div className="flex items-center justify-between text-[11px] text-muted-foreground">
+							{AUTO_SPEEDS.map((speed) => (
+								<span key={speed.key}>
+									{t(`save.ocr.auto.speed.${speed.key}`)}
+								</span>
+							))}
+						</div>
 					</div>
 					{autoMode && (
 						<div className="text-xs text-muted-foreground">

@@ -83,6 +83,10 @@ const resources = {
 				"1秒おきに読み取り、結果が確定したら自動で登録します。",
 			"save.ocr.auto.on": "オン",
 			"save.ocr.auto.off": "オフ",
+			"save.ocr.auto.speedLabel": "読み取り頻度",
+			"save.ocr.auto.speed.slow": "低速 (2秒)",
+			"save.ocr.auto.speed.medium": "中速 (1秒)",
+			"save.ocr.auto.speed.fast": "高速 (0.5秒)",
 			"save.ocr.auto.waiting": "待機モード",
 			"save.ocr.auto.locked": "保存済み（待機に戻るまで停止）",
 			"save.ocr.auto.requirements":
@@ -229,6 +233,10 @@ const resources = {
 				"Runs OCR every second and auto-saves when skills are detected.",
 			"save.ocr.auto.on": "On",
 			"save.ocr.auto.off": "Off",
+			"save.ocr.auto.speedLabel": "Frequency",
+			"save.ocr.auto.speed.slow": "Low (2s)",
+			"save.ocr.auto.speed.medium": "Medium (1s)",
+			"save.ocr.auto.speed.fast": "High (0.5s)",
 			"save.ocr.auto.waiting": "Waiting mode",
 			"save.ocr.auto.locked": "Saved (waiting for idle screen)",
 			"save.ocr.auto.requirements":
