@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Card, CardContent, CardDescription, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
@@ -87,7 +88,8 @@ function BulkFavoriteDialog({
 	language,
 }: BulkFavoriteDialogProps) {
 	if (!open) return null;
-	return (
+	if (typeof document === "undefined") return null;
+	return createPortal(
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<dialog
 				open
@@ -153,7 +155,8 @@ function BulkFavoriteDialog({
 					</Button>
 				</div>
 			</dialog>
-		</div>
+		</div>,
+		document.body,
 	);
 }
 
