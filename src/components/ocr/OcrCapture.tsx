@@ -35,7 +35,7 @@ type OcrCaptureProps = {
 		tableKey: string,
 		groupSkill: string,
 		seriesSkill: string,
-	) => string;
+	) => { id: string; cursorId: number };
 	onUpdateEntry: (
 		tableKey: string,
 		entryId: string,
@@ -204,6 +204,7 @@ export function OcrCapture({
 	const [autoState, setAutoState] = useState<"waiting" | "locked">("waiting");
 	const [result, setResult] = useState<{
 		entryId: string;
+		cursorId: number;
 		tableKey: string;
 		seriesSkill: string;
 		groupSkill: string;
@@ -375,13 +376,14 @@ export function OcrCapture({
 
 					if (hasSkills) {
 						if (autoState !== "waiting") return;
-						const entryId = onAddEntry(
+						const { id: entryId, cursorId } = onAddEntry(
 							selectedTableKey,
 							groupMatch.skill,
 							seriesMatch.skill,
 						);
 						setResult({
 							entryId,
+							cursorId,
 							tableKey: selectedTableKey,
 							seriesSkill: seriesMatch.skill,
 							groupSkill: groupMatch.skill,
@@ -446,9 +448,14 @@ export function OcrCapture({
 			logOcrText("manual", text);
 			const seriesSkill = matchSkillFromText(text, seriesOptions);
 			const groupSkill = matchSkillFromText(text, groupOptions);
-			const entryId = onAddEntry(selectedTableKey, groupSkill, seriesSkill);
+			const { id: entryId, cursorId } = onAddEntry(
+				selectedTableKey,
+				groupSkill,
+				seriesSkill,
+			);
 			setResult({
 				entryId,
+				cursorId,
 				tableKey: selectedTableKey,
 				seriesSkill,
 				groupSkill,
@@ -683,6 +690,9 @@ export function OcrCapture({
 							{t("save.ocr.resultNote")}
 						</div>
 						<div className="grid gap-1">
+							<div className="text-xs text-muted-foreground">
+								{t("save.ocr.cursorId", { value: result.cursorId + 1 })}
+							</div>
 							<div>
 								<Label className="text-xs">{t("save.ocr.series")}</Label>
 								<Select

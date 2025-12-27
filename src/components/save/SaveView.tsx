@@ -36,7 +36,8 @@ type SaveViewProps = {
 		tableKey: string,
 		groupSkill: string,
 		seriesSkill: string,
-	) => string;
+	) => { id: string; cursorId: number };
+	onDeleteEntry: (tableKey: string, entryId: string) => void;
 	onToggleFavorite: (
 		tableKey: string,
 		entryId: string,
@@ -57,6 +58,7 @@ export function SaveView({
 	isLoadingOptions,
 	optionsError,
 	onAddEntry,
+	onDeleteEntry,
 	onToggleFavorite,
 	onUpdateEntry,
 }: SaveViewProps) {
@@ -550,13 +552,14 @@ export function SaveView({
 										<th className="px-4 py-3">{t("save.headers.group")}</th>
 										<th className="px-4 py-3">{t("save.headers.favorite")}</th>
 										<th className="px-4 py-3">{t("save.headers.createdAt")}</th>
+										<th className="px-4 py-3">{t("save.headers.delete")}</th>
 									</tr>
 								</thead>
 								<tbody>
 									{visibleEntries.length === 0 && (
 										<tr>
 											<td
-												colSpan={5}
+												colSpan={6}
 												className="px-4 py-6 text-center text-sm text-muted-foreground"
 											>
 												{t("common.noEntries")}
@@ -639,6 +642,18 @@ export function SaveView({
 												</td>
 												<td className="px-4 py-3 text-xs text-muted-foreground">
 													{formatDate(entry.createdAt, language)}
+												</td>
+												<td className="px-4 py-3">
+													<Button
+														variant="outline"
+														size="sm"
+														className="h-8 px-3 text-xs"
+														onClick={() =>
+															onDeleteEntry(selectedTableKey, entry.id)
+														}
+													>
+														{t("save.delete")}
+													</Button>
 												</td>
 											</tr>
 										);

@@ -19,6 +19,7 @@ function App() {
 		tables,
 		cursor,
 		addEntry,
+		deleteEntry,
 		toggleFavorite,
 		updateEntry,
 		advanceCursor,
@@ -121,6 +122,7 @@ function App() {
 							isLoadingOptions={isLoading}
 							optionsError={error}
 							onAddEntry={addEntry}
+							onDeleteEntry={deleteEntry}
 							onToggleFavorite={toggleFavorite}
 							onUpdateEntry={updateEntry}
 						/>

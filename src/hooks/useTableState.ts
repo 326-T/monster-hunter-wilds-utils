@@ -80,9 +80,10 @@ export function useTableState() {
 	const addEntry = useCallback(
 		(tableKey: string, groupSkill: string, seriesSkill: string) => {
 			const entryId = createId();
+			let nextCursorId = 0;
 			setTables((prev) => {
 				const existing = prev[tableKey] ?? [];
-				const nextCursorId =
+				nextCursorId =
 					existing.reduce((max, entry) => Math.max(max, entry.cursorId), -1) +
 					1;
 				const newEntry: TableEntry = {
@@ -98,10 +99,29 @@ export function useTableState() {
 					[tableKey]: [...existing, newEntry],
 				};
 			});
-			return entryId;
+			return { id: entryId, cursorId: nextCursorId };
 		},
 		[],
 	);
+
+	const deleteEntry = useCallback((tableKey: string, entryId: string) => {
+		setTables((prev) => {
+			const existing = prev[tableKey] ?? [];
+			const remaining = existing.filter((entry) => entry.id !== entryId);
+			const sorted = [...remaining].sort((a, b) => {
+				if (a.cursorId !== b.cursorId) return a.cursorId - b.cursorId;
+				return a.createdAt.localeCompare(b.createdAt);
+			});
+			const reindexed = sorted.map((entry, index) => ({
+				...entry,
+				cursorId: index,
+			}));
+			return {
+				...prev,
+				[tableKey]: reindexed,
+			};
+		});
+	}, []);
 
 	const toggleFavorite = useCallback(
 		(tableKey: string, entryId: string, favorite: boolean) => {
@@ -198,6 +218,7 @@ export function useTableState() {
 		tables,
 		cursor,
 		addEntry,
+		deleteEntry,
 		toggleFavorite,
 		updateEntry,
 		advanceCursor,

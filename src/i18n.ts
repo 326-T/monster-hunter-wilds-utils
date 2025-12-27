@@ -72,6 +72,7 @@ const resources = {
 				"カメラを起動するとプレビューが表示されます。",
 			"save.ocr.result": "読み取り結果",
 			"save.ocr.resultNote": "間違いがあれば手動で修正してください。",
+			"save.ocr.cursorId": "登録カーソル: {value}",
 			"save.ocr.series": "シリーズ",
 			"save.ocr.group": "グループ",
 			"save.ocr.rawText": "OCR テキスト: {value}",
@@ -90,6 +91,8 @@ const resources = {
 			"save.headers.group": "グループ",
 			"save.headers.favorite": "お気に入り",
 			"save.headers.createdAt": "登録日時",
+			"save.headers.delete": "削除",
+			"save.delete": "削除",
 			"cursor.title": "テーブルを進める",
 			"cursor.description":
 				"スキル付与を行う武器/属性を選択してテーブルを進めます。現在のカーソル: {value}",
@@ -213,6 +216,7 @@ const resources = {
 			"save.ocr.previewPlaceholder": "Camera preview will appear here.",
 			"save.ocr.result": "OCR result",
 			"save.ocr.resultNote": "If anything looks wrong, adjust it manually.",
+			"save.ocr.cursorId": "Saved cursor: {value}",
 			"save.ocr.series": "Series",
 			"save.ocr.group": "Group",
 			"save.ocr.rawText": "OCR text: {value}",
@@ -231,6 +235,8 @@ const resources = {
 			"save.headers.group": "Group",
 			"save.headers.favorite": "Favorite",
 			"save.headers.createdAt": "Created",
+			"save.headers.delete": "Delete",
+			"save.delete": "Delete",
 			"cursor.title": "Advance Table",
 			"cursor.description":
 				"Select the weapon/attribute to apply skills and advance the table. Current cursor: {value}",
