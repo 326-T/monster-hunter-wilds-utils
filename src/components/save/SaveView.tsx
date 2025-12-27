@@ -148,20 +148,43 @@ export function SaveView({
 			? HIDDEN_SKILL_LABEL
 			: resolvedGroupSkill;
 
-	const tourSteps = useMemo<Step[]>(
-		() => [
+	const tourSteps = useMemo<Step[]>(() => {
+		const steps: Step[] = [
 			{ target: "[data-tour='save-select']", content: t("tour.save.select") },
 			{ target: "[data-tour='save-current']", content: t("tour.save.current") },
-			{
-				target: "[data-tour='save-visibility']",
-				content: t("tour.save.visibility"),
-			},
-			{ target: "[data-tour='save-form']", content: t("tour.save.form") },
-			{ target: "[data-tour='save-toggle']", content: t("tour.save.toggle") },
-			{ target: "[data-tour='save-table']", content: t("tour.save.table") },
-		],
-		[t],
-	);
+		];
+
+		if (entryMode === "ocr") {
+			steps.push({
+				target: "[data-tour='save-ocr']",
+				content: t("tour.save.ocr"),
+			});
+			steps.push({
+				target: "[data-tour='save-ocr-auto']",
+				content: t("tour.save.ocrAuto"),
+			});
+		} else {
+			steps.push({
+				target: "[data-tour='save-form']",
+				content: t("tour.save.form"),
+			});
+		}
+
+		steps.push({
+			target: "[data-tour='save-visibility']",
+			content: t("tour.save.visibility"),
+		});
+		steps.push({
+			target: "[data-tour='save-toggle']",
+			content: t("tour.save.toggle"),
+		});
+		steps.push({
+			target: "[data-tour='save-table']",
+			content: t("tour.save.table"),
+		});
+
+		return steps;
+	}, [entryMode, t]);
 
 	const handleTour = useCallback((data: CallBackProps) => {
 		const finished =
@@ -299,17 +322,21 @@ export function SaveView({
 						</div>
 
 						{entryMode === "ocr" ? (
-							<OcrCapture
-								selectedTableKey={selectedTableKey}
-								seriesOptions={seriesOptions}
-								groupOptions={groupOptions}
-								disabled={
-									!selectedTableKey || isLoadingOptions || Boolean(optionsError)
-								}
-								language={language}
-								onAddEntry={onAddEntry}
-								onUpdateEntry={onUpdateEntry}
-							/>
+							<div data-tour="save-ocr">
+								<OcrCapture
+									selectedTableKey={selectedTableKey}
+									seriesOptions={seriesOptions}
+									groupOptions={groupOptions}
+									disabled={
+										!selectedTableKey ||
+										isLoadingOptions ||
+										Boolean(optionsError)
+									}
+									language={language}
+									onAddEntry={onAddEntry}
+									onUpdateEntry={onUpdateEntry}
+								/>
+							</div>
 						) : (
 							<>
 								<form

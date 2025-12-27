@@ -592,7 +592,10 @@ export function OcrCapture({
 						{t("save.ocr.idle")}
 					</div>
 				)}
-				<div className="grid gap-2 rounded-xl border border-border/40 bg-background p-3">
+				<div
+					className="grid gap-2 rounded-xl border border-border/40 bg-background p-3"
+					data-tour="save-ocr-auto"
+				>
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div className="space-y-1">
 							<div className="text-sm font-semibold">

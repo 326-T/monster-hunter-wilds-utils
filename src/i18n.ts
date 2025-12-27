@@ -133,11 +133,13 @@ const resources = {
 			"tour.last": "完了",
 			"tour.save.select": "武器と属性を選んで、記録するテーブルを決めます。",
 			"tour.save.current": "選択中のテーブルとカーソル位置を確認できます。",
+			"tour.save.ocr": "OCRで読み取り、結果を自動登録できます。",
+			"tour.save.ocrAuto": "自動検出は待機→検知で登録→待機復帰まで停止します。",
 			"tour.save.visibility":
 				"表示するスキルを絞り込みたいときに使います。非表示は「非表示スキル」として記録されます。",
 			"tour.save.form": "シリーズ/グループを選んで結果を追加します。",
 			"tour.save.toggle": "通過済みの行は表示/非表示を切り替えられます。",
-			"tour.save.table": "登録済みの行を編集・お気に入り設定できます。",
+			"tour.save.table": "登録済みの行を編集・お気に入り・削除できます。",
 			"tour.cursor.filters": "武器/属性で候補を絞り込みます。",
 			"tour.cursor.candidates": "このカーソルで取得できる候補が表示されます。",
 			"tour.cursor.advance":
@@ -277,11 +279,14 @@ const resources = {
 			"tour.last": "Done",
 			"tour.save.select": "Choose a weapon and attribute to select the table.",
 			"tour.save.current": "Review the current table and cursor position.",
+			"tour.save.ocr": "Use OCR to read the screen and save results.",
+			"tour.save.ocrAuto":
+				"Auto detect waits for idle, saves on detection, then pauses.",
 			"tour.save.visibility":
 				'Use this to filter visible skills. Hidden entries are recorded as "Hidden Skill."',
 			"tour.save.form": "Pick series/group skills and add a new entry.",
 			"tour.save.toggle": "Toggle whether passed rows are shown.",
-			"tour.save.table": "Edit saved rows and toggle favorites.",
+			"tour.save.table": "Edit, favorite, or delete saved rows.",
 			"tour.cursor.filters": "Filter candidates by weapon and attribute.",
 			"tour.cursor.candidates":
 				"Candidates available for the current cursor appear here.",
