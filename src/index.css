@@ -1,51 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 215 28% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 215 28% 14%;
-  --muted: 210 12% 96%;
-  --muted-foreground: 215 12% 38%;
-  --accent: 198 74% 45%;
-  --accent-foreground: 0 0% 100%;
-  --border: 210 10% 88%;
-  --ring: 198 60% 40%;
-  --input: 210 10% 94%;
-  --font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
-  --font-heading: var(--font-sans);
+	--background: 0 0% 100%;
+	--foreground: 215 28% 14%;
+	--card: 0 0% 100%;
+	--card-foreground: 215 28% 14%;
+	--muted: 210 12% 96%;
+	--muted-foreground: 215 12% 38%;
+	--accent: 198 74% 45%;
+	--accent-foreground: 0 0% 100%;
+	--border: 210 10% 88%;
+	--ring: 198 60% 40%;
+	--input: 210 10% 94%;
+	--font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+		sans-serif;
+	--font-heading: var(--font-sans);
 }
 
 html[lang="en"] {
-  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-heading: var(--font-sans);
+	--font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+	--font-heading: var(--font-sans);
 }
 
 * {
-  border-color: hsl(var(--border));
+	border-color: hsl(var(--border));
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: var(--font-sans);
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--background));
-  background-image: none;
+	margin: 0;
+	min-height: 100vh;
+	font-family: var(--font-sans);
+	color: hsl(var(--foreground));
+	background-color: hsl(var(--background));
+	background-image: none;
 }
 
 h1,
 h2,
 h3,
 .heading-serif {
-  font-family: var(--font-heading);
-  letter-spacing: 0.02em;
+	font-family: var(--font-heading);
+	letter-spacing: 0.02em;
 }
 
 #root {
-  min-height: 100vh;
+	min-height: 100vh;
 }
