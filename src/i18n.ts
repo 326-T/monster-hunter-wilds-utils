@@ -88,6 +88,8 @@ const resources = {
 			"save.ocr.auto.speed.medium": "中速 (1秒)",
 			"save.ocr.auto.speed.fast": "高速 (0.5秒)",
 			"save.ocr.auto.waiting": "待機モード",
+			"save.ocr.auto.waitDetected": "?????検知中（読み取り待ち）",
+			"save.ocr.auto.waitingForToken": "?????を待っています",
 			"save.ocr.auto.locked": "保存済み（待機に戻るまで停止）",
 			"save.ocr.auto.requirements":
 				"カメラ起動・範囲指定・テーブル選択が必要です。",
@@ -238,6 +240,8 @@ const resources = {
 			"save.ocr.auto.speed.medium": "Medium (1s)",
 			"save.ocr.auto.speed.fast": "High (0.5s)",
 			"save.ocr.auto.waiting": "Waiting mode",
+			"save.ocr.auto.waitDetected": "Idle detected (ready)",
+			"save.ocr.auto.waitingForToken": "Waiting for idle screen",
 			"save.ocr.auto.locked": "Saved (waiting for idle screen)",
 			"save.ocr.auto.requirements":
 				"Start the camera, select a region, and choose a table.",

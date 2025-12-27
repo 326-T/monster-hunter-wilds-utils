@@ -209,6 +209,7 @@ export function OcrCapture({
 	const [autoMode, setAutoMode] = useState(false);
 	const [autoState, setAutoState] = useState<"waiting" | "locked">("waiting");
 	const [autoSpeed, setAutoSpeed] = useState<AutoSpeedKey>("medium");
+	const [autoWaitSignal, setAutoWaitSignal] = useState(false);
 	const [result, setResult] = useState<{
 		entryId: string;
 		cursorId: number;
@@ -281,6 +282,7 @@ export function OcrCapture({
 		if (!autoMode) {
 			setAutoState("waiting");
 			autoInFlightRef.current = false;
+			setAutoWaitSignal(false);
 		}
 	}, [autoMode]);
 
@@ -376,6 +378,9 @@ export function OcrCapture({
 					if (cancelled) return;
 
 					const waitDetected = isAutoWaitText(text);
+					setAutoWaitSignal((prev) =>
+						prev === waitDetected ? prev : waitDetected,
+					);
 					if (waitDetected) {
 						if (autoState !== "waiting") {
 							setAutoState("waiting");
@@ -502,15 +507,27 @@ export function OcrCapture({
 		return "";
 	}, [ocrError, ocrProgress, ocrStatus, t]);
 
-	const autoStatusLabel = useMemo(() => {
-		if (!autoMode) return "";
-		if (!canCapture || !selectedTableKey) {
-			return t("save.ocr.auto.requirements");
+	const autoIndicator = useMemo(() => {
+		if (!autoMode || !canCapture || !selectedTableKey) {
+			return null;
 		}
-		return autoState === "waiting"
-			? t("save.ocr.auto.waiting")
-			: t("save.ocr.auto.locked");
-	}, [autoMode, autoState, canCapture, selectedTableKey, t]);
+		if (autoState === "locked") {
+			return {
+				className: "bg-amber-400",
+				label: t("save.ocr.auto.locked"),
+			};
+		}
+		if (autoWaitSignal) {
+			return {
+				className: "bg-emerald-400",
+				label: t("save.ocr.auto.waitDetected"),
+			};
+		}
+		return {
+			className: "bg-slate-400/70",
+			label: t("save.ocr.auto.waitingForToken"),
+		};
+	}, [autoMode, autoState, autoWaitSignal, canCapture, selectedTableKey, t]);
 
 	const seriesSelectOptions = useMemo(
 		() => [HIDDEN_SKILL_LABEL, ...seriesOptions],
@@ -619,15 +636,28 @@ export function OcrCapture({
 								{t("save.ocr.auto.description")}
 							</div>
 						</div>
-						<Button
-							type="button"
-							variant={autoMode ? "default" : "outline"}
-							size="sm"
-							onClick={() => setAutoMode((prev) => !prev)}
-							disabled={disabled}
-						>
-							{autoMode ? t("save.ocr.auto.on") : t("save.ocr.auto.off")}
-						</Button>
+						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant={autoMode ? "default" : "outline"}
+								size="sm"
+								onClick={() => setAutoMode((prev) => !prev)}
+								disabled={disabled}
+							>
+								{autoMode ? t("save.ocr.auto.on") : t("save.ocr.auto.off")}
+							</Button>
+							{autoIndicator && (
+								<span
+									className={cn(
+										"h-2.5 w-2.5 rounded-full ring-2 ring-background",
+										autoIndicator.className,
+									)}
+									role="img"
+									aria-label={autoIndicator.label}
+									title={autoIndicator.label}
+								/>
+							)}
+						</div>
 					</div>
 					<div className="grid gap-2 text-xs">
 						<div className="flex items-center justify-between gap-2">
@@ -660,11 +690,6 @@ export function OcrCapture({
 							))}
 						</div>
 					</div>
-					{autoMode && (
-						<div className="text-xs text-muted-foreground">
-							{autoStatusLabel}
-						</div>
-					)}
 				</div>
 			</div>
 
@@ -730,7 +755,18 @@ export function OcrCapture({
 
 			{result && (
 				<div className="grid gap-3">
-					<div className="grid gap-2 rounded-xl border border-border/40 bg-background p-3 text-xs">
+					<div className="relative grid gap-2 rounded-xl border border-border/40 bg-background p-3 text-xs">
+						{autoIndicator && (
+							<span
+								className={cn(
+									"absolute right-2 top-2 h-2.5 w-2.5 rounded-full ring-2 ring-background",
+									autoIndicator.className,
+								)}
+								role="img"
+								aria-label={autoIndicator.label}
+								title={autoIndicator.label}
+							/>
+						)}
 						<div className="text-xs font-semibold text-muted-foreground">
 							{t("save.ocr.result")}
 						</div>
