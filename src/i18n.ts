@@ -77,6 +77,15 @@ const resources = {
 			"save.ocr.rawText": "OCR テキスト: {value}",
 			"save.ocr.webgpuOn": "WebGPU: 有効",
 			"save.ocr.webgpuOff": "WebGPU: 無効",
+			"save.ocr.auto.title": "自動検出",
+			"save.ocr.auto.description":
+				"1秒おきに読み取り、結果が確定したら自動で登録します。",
+			"save.ocr.auto.on": "オン",
+			"save.ocr.auto.off": "オフ",
+			"save.ocr.auto.waiting": "待機モード",
+			"save.ocr.auto.locked": "保存済み（待機に戻るまで停止）",
+			"save.ocr.auto.requirements":
+				"カメラ起動・範囲指定・テーブル選択が必要です。",
 			"save.headers.series": "シリーズ",
 			"save.headers.group": "グループ",
 			"save.headers.favorite": "お気に入り",
@@ -209,6 +218,15 @@ const resources = {
 			"save.ocr.rawText": "OCR text: {value}",
 			"save.ocr.webgpuOn": "WebGPU: On",
 			"save.ocr.webgpuOff": "WebGPU: Off",
+			"save.ocr.auto.title": "Auto detect",
+			"save.ocr.auto.description":
+				"Runs OCR every second and auto-saves when skills are detected.",
+			"save.ocr.auto.on": "On",
+			"save.ocr.auto.off": "Off",
+			"save.ocr.auto.waiting": "Waiting mode",
+			"save.ocr.auto.locked": "Saved (waiting for idle screen)",
+			"save.ocr.auto.requirements":
+				"Start the camera, select a region, and choose a table.",
 			"save.headers.series": "Series",
 			"save.headers.group": "Group",
 			"save.headers.favorite": "Favorite",

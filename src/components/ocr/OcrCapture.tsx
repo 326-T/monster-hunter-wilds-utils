@@ -41,9 +41,32 @@ type OcrCaptureProps = {
 const MAX_CAPTURE_WIDTH = 720;
 const MIN_ROI_SIZE = 0.05;
 const OCR_LANGUAGE = "jpn";
+const AUTO_WAIT_TOKEN = "????? ?????";
+const AUTO_WAIT_PLACEHOLDER_MIN = 2;
+const AUTO_WAIT_PLACEHOLDER_RATIO = 0.5;
 
 const clamp = (value: number, min: number, max: number) =>
 	Math.min(Math.max(value, min), max);
+
+const normalizeAutoToken = (value: string) => value.replace(/\s+/g, "");
+
+const isAutoWaitText = (value: string) => {
+	const normalizedToken = normalizeAutoToken(AUTO_WAIT_TOKEN);
+	const normalizedText = normalizeAutoToken(value);
+	if (normalizedToken && normalizedText.includes(normalizedToken)) {
+		return true;
+	}
+	const compact = value.replace(/\s+/g, "");
+	if (!compact) return false;
+	const placeholderMatches = compact.match(/[?？2]/g);
+	const placeholderCount = placeholderMatches?.length ?? 0;
+	if (placeholderCount < AUTO_WAIT_PLACEHOLDER_MIN) return false;
+	return placeholderCount / compact.length >= AUTO_WAIT_PLACEHOLDER_RATIO;
+};
+
+const logOcrText = (source: "auto" | "manual", text: string) => {
+	console.info(`[OCR:${source}]`, text);
+};
 
 const IconPlay = (props: React.SVGProps<SVGSVGElement>) => (
 	<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" {...props}>
@@ -147,6 +170,8 @@ export function OcrCapture({
 	>("idle");
 	const [ocrProgress, setOcrProgress] = useState(0);
 	const [ocrError, setOcrError] = useState("");
+	const [autoMode, setAutoMode] = useState(false);
+	const [autoState, setAutoState] = useState<"waiting" | "locked">("waiting");
 	const [result, setResult] = useState<{
 		entryId: string;
 		tableKey: string;
@@ -158,11 +183,14 @@ export function OcrCapture({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const workerRef = useRef<TesseractWorker | null>(null);
 	const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null);
+	const autoInFlightRef = useRef(false);
 	const hasWebGpu = typeof navigator !== "undefined" && "gpu" in navigator;
 
 	const roiReady =
 		roi && roi.width >= MIN_ROI_SIZE && roi.height >= MIN_ROI_SIZE;
 	const canCapture = roiReady && isActive && !disabled;
+	const autoReady =
+		autoMode && canCapture && Boolean(selectedTableKey) && !disabled;
 
 	const initWorker = useCallback(async () => {
 		if (workerRef.current) return workerRef.current;
@@ -204,6 +232,13 @@ export function OcrCapture({
 		stop();
 		setOcrProgress(0);
 	}, [stop]);
+
+	useEffect(() => {
+		if (!autoMode) {
+			setAutoState("waiting");
+			autoInFlightRef.current = false;
+		}
+	}, [autoMode]);
 
 	useEffect(() => {
 		return () => {
@@ -271,6 +306,83 @@ export function OcrCapture({
 		return canvas;
 	}, [roi]);
 
+	useEffect(() => {
+		if (!autoMode || !selectedTableKey) return;
+		setAutoState("waiting");
+	}, [autoMode, selectedTableKey]);
+
+	useEffect(() => {
+		if (!autoReady) return;
+		let cancelled = false;
+		const intervalId = window.setInterval(() => {
+			if (autoInFlightRef.current) return;
+			autoInFlightRef.current = true;
+			void (async () => {
+				try {
+					const rawCanvas = captureCanvas();
+					if (!rawCanvas) return;
+					const processedCanvas = await preprocessCanvas(rawCanvas, {
+						threshold: 160,
+					});
+					const worker = await initWorker();
+					const {
+						data: { text },
+					} = await worker.recognize(processedCanvas);
+					logOcrText("auto", text);
+					if (cancelled) return;
+
+					if (isAutoWaitText(text)) {
+						if (autoState !== "waiting") {
+							setAutoState("waiting");
+						}
+						return;
+					}
+
+					const seriesSkill = matchSkillFromText(text, seriesOptions);
+					const groupSkill = matchSkillFromText(text, groupOptions);
+					const hasSkills =
+						seriesSkill !== UNKNOWN_SKILL_LABEL &&
+						groupSkill !== UNKNOWN_SKILL_LABEL;
+					if (!hasSkills || autoState !== "waiting") return;
+
+					const entryId = onAddEntry(selectedTableKey, groupSkill, seriesSkill);
+					setResult({
+						entryId,
+						tableKey: selectedTableKey,
+						seriesSkill,
+						groupSkill,
+						text,
+					});
+					setAutoState("locked");
+					setOcrStatus("success");
+				} catch {
+					if (!cancelled) {
+						setOcrStatus("error");
+						setOcrError(t("save.ocr.failed"));
+					}
+				} finally {
+					autoInFlightRef.current = false;
+				}
+			})();
+		}, 1000);
+
+		return () => {
+			cancelled = true;
+			window.clearInterval(intervalId);
+			autoInFlightRef.current = false;
+		};
+	}, [
+		autoReady,
+		autoState,
+		captureCanvas,
+		groupOptions,
+		initWorker,
+		onAddEntry,
+		selectedTableKey,
+		seriesOptions,
+		t,
+	]);
+
 	const handleCapture = useCallback(async () => {
 		if (!selectedTableKey) {
 			setOcrStatus("error");
@@ -296,6 +408,7 @@ export function OcrCapture({
 			const {
 				data: { text },
 			} = await worker.recognize(processedCanvas);
+			logOcrText("manual", text);
 			const seriesSkill = matchSkillFromText(text, seriesOptions);
 			const groupSkill = matchSkillFromText(text, groupOptions);
 			const entryId = onAddEntry(selectedTableKey, groupSkill, seriesSkill);
@@ -332,6 +445,16 @@ export function OcrCapture({
 		if (ocrStatus === "error") return ocrError || t("save.ocr.failed");
 		return "";
 	}, [ocrError, ocrProgress, ocrStatus, t]);
+
+	const autoStatusLabel = useMemo(() => {
+		if (!autoMode) return "";
+		if (!canCapture || !selectedTableKey) {
+			return t("save.ocr.auto.requirements");
+		}
+		return autoState === "waiting"
+			? t("save.ocr.auto.waiting")
+			: t("save.ocr.auto.locked");
+	}, [autoMode, autoState, canCapture, selectedTableKey, t]);
 
 	const seriesSelectOptions = useMemo(
 		() => [HIDDEN_SKILL_LABEL, ...seriesOptions],
@@ -427,6 +550,32 @@ export function OcrCapture({
 						{t("save.ocr.idle")}
 					</div>
 				)}
+				<div className="grid gap-2 rounded-xl border border-border/40 bg-background p-3">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="space-y-1">
+							<div className="text-sm font-semibold">
+								{t("save.ocr.auto.title")}
+							</div>
+							<div className="text-xs text-muted-foreground">
+								{t("save.ocr.auto.description")}
+							</div>
+						</div>
+						<Button
+							type="button"
+							variant={autoMode ? "default" : "outline"}
+							size="sm"
+							onClick={() => setAutoMode((prev) => !prev)}
+							disabled={disabled}
+						>
+							{autoMode ? t("save.ocr.auto.on") : t("save.ocr.auto.off")}
+						</Button>
+					</div>
+					{autoMode && (
+						<div className="text-xs text-muted-foreground">
+							{autoStatusLabel}
+						</div>
+					)}
+				</div>
 			</div>
 
 			{isActive && (

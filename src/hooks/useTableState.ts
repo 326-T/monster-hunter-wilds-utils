@@ -37,7 +37,7 @@ const normalizeTableState = (state: StoredTableState): TableState => {
 		);
 		if (hasAllCursorIds) {
 			normalized[key] = entries as TableEntry[];
-			return;
+			continue;
 		}
 		const sorted = [...entries].sort((a, b) =>
 			a.createdAt.localeCompare(b.createdAt),
