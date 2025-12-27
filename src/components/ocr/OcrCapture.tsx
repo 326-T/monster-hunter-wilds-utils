@@ -54,6 +54,8 @@ const AUTO_WAIT_SHORT_LENGTH = 8;
 const AUTO_SKILL_MIN_SUBSTRING = 2;
 const AUTO_SKILL_MIN_BIGRAM = 2;
 const AUTO_SKILL_MIN_MONOGRAM = 3;
+const ENGLISH_WHITELIST_BASE =
+	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ?!.,:;'-_/()&";
 const AUTO_SPEEDS = [
 	{ key: "slow", ms: 2000 },
 	{ key: "medium", ms: 1000 },
@@ -102,6 +104,34 @@ const isSkillMatchStrong = (match: SkillMatch) => {
 		return match.score >= AUTO_SKILL_MIN_MONOGRAM;
 	}
 	return false;
+};
+
+const buildWhitelist = (
+	language: "ja" | "en",
+	seriesOptions: string[],
+	groupOptions: string[],
+) => {
+	const chars = new Set<string>();
+	if (language === "en") {
+		for (const char of ENGLISH_WHITELIST_BASE) {
+			chars.add(char);
+		}
+	}
+	const allOptions = [...seriesOptions, ...groupOptions];
+	for (const option of allOptions) {
+		const label = getSkillLabel(option, language);
+		for (const char of label) {
+			chars.add(char);
+		}
+	}
+	if (language === "ja") {
+		chars.add("?");
+		chars.add("？");
+	}
+	if (language === "en") {
+		chars.add("?");
+	}
+	return Array.from(chars).join("");
 };
 
 const IconPlay = (props: React.SVGProps<SVGSVGElement>) => (
@@ -223,6 +253,7 @@ export function OcrCapture({
 	const workerRef = useRef<TesseractWorker | null>(null);
 	const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null);
 	const autoInFlightRef = useRef(false);
+	const whitelistRef = useRef("");
 	const hasWebGpu = typeof navigator !== "undefined" && "gpu" in navigator;
 
 	const roiReady =
@@ -235,6 +266,10 @@ export function OcrCapture({
 	const autoSpeedIndex = Math.max(
 		0,
 		AUTO_SPEEDS.findIndex((speed) => speed.key === autoSpeed),
+	);
+	const whitelist = useMemo(
+		() => buildWhitelist(language, seriesOptions, groupOptions),
+		[language, seriesOptions, groupOptions],
 	);
 
 	const initWorker = useCallback(async () => {
@@ -262,6 +297,15 @@ export function OcrCapture({
 		}
 	}, []);
 
+	const applyWhitelist = useCallback(
+		async (worker: TesseractWorker) => {
+			if (!whitelist || whitelistRef.current === whitelist) return;
+			await worker.setParameters({ tessedit_char_whitelist: whitelist });
+			whitelistRef.current = whitelist;
+		},
+		[whitelist],
+	);
+
 	const handleStart = useCallback(async () => {
 		setOcrStatus("idle");
 		setOcrError("");
@@ -283,6 +327,7 @@ export function OcrCapture({
 			setAutoState("waiting");
 			autoInFlightRef.current = false;
 			setAutoWaitSignal(false);
+			whitelistRef.current = "";
 		}
 	}, [autoMode]);
 
@@ -371,6 +416,7 @@ export function OcrCapture({
 						threshold: 160,
 					});
 					const worker = await initWorker();
+					await applyWhitelist(worker);
 					const {
 						data: { text },
 					} = await worker.recognize(processedCanvas);
@@ -427,6 +473,7 @@ export function OcrCapture({
 			autoInFlightRef.current = false;
 		};
 	}, [
+		applyWhitelist,
 		autoIntervalMs,
 		autoReady,
 		autoState,
@@ -461,6 +508,7 @@ export function OcrCapture({
 				threshold: 160,
 			});
 			const worker = await initWorker();
+			await applyWhitelist(worker);
 			const {
 				data: { text },
 			} = await worker.recognize(processedCanvas);
@@ -486,6 +534,7 @@ export function OcrCapture({
 			setOcrError(t("save.ocr.failed"));
 		}
 	}, [
+		applyWhitelist,
 		canCapture,
 		captureCanvas,
 		groupOptions,
