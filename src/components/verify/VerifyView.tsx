@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import { ResponsiveSelect } from "../ui/responsive-select";
+import { Select } from "../ui/select";
 import { SectionCard } from "../ui/section-card";
 import {
 	allTables,
@@ -12,11 +13,14 @@ import {
 	getTableKeyLabel,
 	getTableLabel,
 	getWeaponLabel,
+	HIDDEN_SKILL_LABEL,
+	UNKNOWN_SKILL_LABEL,
 	WEAPONS,
 } from "../../lib/skills";
 import type { TableEntry, TableRef, TableState } from "../../lib/skills";
 import { useTranslation } from "react-i18next";
 import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
+import { useSkillOptions } from "../../hooks/useSkillOptions";
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]));
 
@@ -31,6 +35,128 @@ type VerifyViewProps = {
 	) => void;
 };
 
+type BulkFavoriteDialogProps = {
+	open: boolean;
+	title: string;
+	description: string;
+	weaponLabel: string;
+	seriesLabel: string;
+	groupLabel: string;
+	cancelLabel: string;
+	applyLabel: string;
+	allLabel: string;
+	weaponOptions: string[];
+	seriesOptions: string[];
+	groupOptions: string[];
+	weaponValue: string;
+	seriesValue: string;
+	groupValue: string;
+	onWeaponChange: (value: string) => void;
+	onSeriesChange: (value: string) => void;
+	onGroupChange: (value: string) => void;
+	onCancel: () => void;
+	onApply: () => void;
+	getWeaponLabel: (weapon: string, language: "ja" | "en") => string;
+	getSkillLabel: (skill: string, language: "ja" | "en") => string;
+	language: "ja" | "en";
+};
+
+function BulkFavoriteDialog({
+	open,
+	title,
+	description,
+	weaponLabel,
+	seriesLabel,
+	groupLabel,
+	cancelLabel,
+	applyLabel,
+	allLabel,
+	weaponOptions,
+	seriesOptions,
+	groupOptions,
+	weaponValue,
+	seriesValue,
+	groupValue,
+	onWeaponChange,
+	onSeriesChange,
+	onGroupChange,
+	onCancel,
+	onApply,
+	getWeaponLabel,
+	getSkillLabel,
+	language,
+}: BulkFavoriteDialogProps) {
+	if (!open) return null;
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+			<dialog
+				open
+				className="grid w-full max-w-lg gap-4 rounded-2xl border border-border/60 bg-background p-4 shadow-xl"
+				aria-label={title}
+			>
+				<div className="space-y-1">
+					<div className="text-sm font-semibold">{title}</div>
+					<div className="text-xs text-muted-foreground">{description}</div>
+				</div>
+				<div className="grid gap-3">
+					<div className="grid gap-2">
+						<Label className="text-xs">{weaponLabel}</Label>
+						<Select
+							value={weaponValue}
+							onChange={(event) => onWeaponChange(event.target.value)}
+							className="h-9 text-xs"
+						>
+							{weaponOptions.map((weapon) => (
+								<option key={weapon} value={weapon}>
+									{getWeaponLabel(weapon, language)}
+								</option>
+							))}
+						</Select>
+					</div>
+					<div className="grid gap-2">
+						<Label className="text-xs">{seriesLabel}</Label>
+						<Select
+							value={seriesValue}
+							onChange={(event) => onSeriesChange(event.target.value)}
+							className="h-9 text-xs"
+						>
+							<option value="all">{allLabel}</option>
+							{seriesOptions.map((option) => (
+								<option key={option} value={option}>
+									{getSkillLabel(option, language)}
+								</option>
+							))}
+						</Select>
+					</div>
+					<div className="grid gap-2">
+						<Label className="text-xs">{groupLabel}</Label>
+						<Select
+							value={groupValue}
+							onChange={(event) => onGroupChange(event.target.value)}
+							className="h-9 text-xs"
+						>
+							<option value="all">{allLabel}</option>
+							{groupOptions.map((option) => (
+								<option key={option} value={option}>
+									{getSkillLabel(option, language)}
+								</option>
+							))}
+						</Select>
+					</div>
+				</div>
+				<div className="flex flex-wrap justify-end gap-2">
+					<Button variant="outline" size="sm" onClick={onCancel}>
+						{cancelLabel}
+					</Button>
+					<Button size="sm" onClick={onApply}>
+						{applyLabel}
+					</Button>
+				</div>
+			</dialog>
+		</div>
+	);
+}
+
 export function VerifyView({
 	tables,
 	onExport,
@@ -43,7 +169,12 @@ export function VerifyView({
 	const [weaponFilter, setWeaponFilter] = useState("all");
 	const [attributeFilter, setAttributeFilter] = useState("all");
 	const [importMessageKey, setImportMessageKey] = useState("");
+	const [bulkOpen, setBulkOpen] = useState(false);
+	const [bulkWeapon, setBulkWeapon] = useState(WEAPONS[0] ?? "");
+	const [bulkSeries, setBulkSeries] = useState("all");
+	const [bulkGroup, setBulkGroup] = useState("all");
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const { groupOptions, seriesOptions } = useSkillOptions();
 
 	const filteredTables = useMemo(() => {
 		const keys = Object.keys(tables).filter(
@@ -92,6 +223,16 @@ export function VerifyView({
 		}
 		return Array.from(set).sort((a, b) => a - b);
 	}, [filteredTables, tables]);
+
+	const seriesFilterOptions = useMemo(() => {
+		const list = [HIDDEN_SKILL_LABEL, UNKNOWN_SKILL_LABEL, ...seriesOptions];
+		return Array.from(new Set(list));
+	}, [seriesOptions]);
+
+	const groupFilterOptions = useMemo(() => {
+		const list = [HIDDEN_SKILL_LABEL, UNKNOWN_SKILL_LABEL, ...groupOptions];
+		return Array.from(new Set(list));
+	}, [groupOptions]);
 
 	const tourSteps = useMemo<Step[]>(
 		() => [
@@ -147,6 +288,22 @@ export function VerifyView({
 		} finally {
 			event.target.value = "";
 		}
+	};
+
+	const handleBulkFavorite = () => {
+		const seriesFilter = bulkSeries === "all" ? "" : bulkSeries;
+		const groupFilter = bulkGroup === "all" ? "" : bulkGroup;
+		for (const [tableKey, entries] of Object.entries(tables)) {
+			const tableMeta = tableMetaByKey.get(tableKey);
+			if (!tableMeta || tableMeta.weapon !== bulkWeapon) continue;
+			for (const entry of entries) {
+				if (seriesFilter && entry.seriesSkill !== seriesFilter) continue;
+				if (groupFilter && entry.groupSkill !== groupFilter) continue;
+				if (entry.favorite) continue;
+				onToggleFavorite(tableKey, entry.id, true);
+			}
+		}
+		setBulkOpen(false);
 	};
 
 	return (
@@ -261,6 +418,18 @@ export function VerifyView({
 				</SectionCard>
 
 				<SectionCard title={t("verify.sections.table")}>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="text-xs text-muted-foreground">
+							{t("verify.bulk.note")}
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setBulkOpen(true)}
+						>
+							{t("verify.bulk.open")}
+						</Button>
+					</div>
 					<div
 						className="overflow-x-auto rounded-2xl border border-border/60"
 						data-tour="verify-table"
@@ -348,6 +517,31 @@ export function VerifyView({
 					</div>
 				</SectionCard>
 			</CardContent>
+			<BulkFavoriteDialog
+				open={bulkOpen}
+				title={t("verify.bulk.title")}
+				description={t("verify.bulk.description")}
+				weaponLabel={t("verify.bulk.weapon")}
+				seriesLabel={t("verify.bulk.series")}
+				groupLabel={t("verify.bulk.group")}
+				cancelLabel={t("verify.bulk.cancel")}
+				applyLabel={t("verify.bulk.apply")}
+				allLabel={t("common.all")}
+				weaponOptions={WEAPONS}
+				seriesOptions={seriesFilterOptions}
+				groupOptions={groupFilterOptions}
+				weaponValue={bulkWeapon}
+				seriesValue={bulkSeries}
+				groupValue={bulkGroup}
+				onWeaponChange={setBulkWeapon}
+				onSeriesChange={setBulkSeries}
+				onGroupChange={setBulkGroup}
+				onCancel={() => setBulkOpen(false)}
+				onApply={handleBulkFavorite}
+				getWeaponLabel={getWeaponLabel}
+				getSkillLabel={getSkillLabel}
+				language={language}
+			/>
 		</Card>
 	);
 }
