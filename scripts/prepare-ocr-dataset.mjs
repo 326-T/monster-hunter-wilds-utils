@@ -45,7 +45,12 @@ samples.forEach((sample, index) => {
 	fs.writeFileSync(imagePath, buffer);
 	const seriesLabel = sample.labelSeries ?? sample.seriesSkill ?? "";
 	const groupLabel = sample.labelGroup ?? sample.groupSkill ?? "";
-	fs.writeFileSync(gtPath, `${seriesLabel}\n${groupLabel}\n`);
+	const combinedLabels = [seriesLabel, groupLabel]
+		.map((value) => value.trim())
+		.filter(Boolean);
+	const combinedLabel =
+		combinedLabels.length > 0 ? combinedLabels.join(" / ") : "不明";
+	fs.writeFileSync(gtPath, `${combinedLabel}\n`);
 
 	labelsStream.write(
 		`${[
