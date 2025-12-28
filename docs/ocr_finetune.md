@@ -25,29 +25,24 @@ window.mhwuGetOcrDataset()
 ## 2. 画像とラベルの生成
 
 ```
-node scripts/prepare-ocr-dataset.mjs path/to/mhwu-ocr-dataset.json
+node tools/scripts/prepare-ocr-dataset.mjs path/to/mhwu-ocr-dataset.json tools/ocr-dataset
 ```
 
 以下が生成されます:
 
-- `ocr-dataset/images/*.png` : OCR入力画像
-- `ocr-dataset/images/*.gt.txt` : 正解ラベル（シリーズ / グループを1行に連結）
-- `ocr-dataset/labels.tsv` : 参照用の一覧
-
-すでに `.box` / `.lstmf` を生成済みの場合は、再生成前に以下を実行してください。
-
-```
-cd tools/tesstrain
-gmake clean-box clean-lstmf
-```
+- `tools/ocr-dataset/images/*.png` : OCR入力画像
+- `tools/ocr-dataset/images/*.gt.txt` : 正解ラベル（シリーズ / グループを1行に連結）
+- `tools/ocr-dataset/labels.tsv` : 参照用の一覧
 
 ## 3. 学習テキストの生成
 
 ```
-node scripts/build-ocr-training-text.mjs path/to/mhwu-ocr-dataset.json
+node tools/scripts/build-ocr-training-text.mjs \
+  path/to/mhwu-ocr-dataset.json \
+  tools/ocr-dataset/training.txt
 ```
 
-`ocr-dataset/training.txt` が生成されます。
+`tools/ocr-dataset/training.txt` が生成されます。
 
 ## 4. Tesseract 学習
 
@@ -60,7 +55,7 @@ Tesseractの学習はブラウザ内では実行できないため、`tesstrain`
 ```
 # ground-truth を tesstrain の想定パスへ配置
 mkdir -p tools/tesstrain/data/mhwu-ground-truth
-cp ocr-dataset/images/* tools/tesstrain/data/mhwu-ground-truth/
+cp tools/ocr-dataset/images/* tools/tesstrain/data/mhwu-ground-truth/
 
 # jpn.traineddata を取得（初回のみ）
 mkdir -p tools/tessdata_best
@@ -80,6 +75,37 @@ gmake traineddata MODEL_NAME=mhwu
 
 `jpn.traineddata` を `public/tessdata/` に配置すると、アプリ起動時に自動で読み込みます。
 （存在しない場合はデフォルトの学習データを利用します）
+
+## 6. 再学習の手順
+
+1. 既存の生成物を削除（macOS の `find -L -delete` が失敗する場合があるため手動）
+
+```
+rm -f tools/tesstrain/data/mhwu-ground-truth/*.box \
+  tools/tesstrain/data/mhwu-ground-truth/*.lstmf
+```
+
+必要なら学習結果も削除します。
+
+```
+cd tools/tesstrain
+gmake clean-output MODEL_NAME=mhwu
+```
+
+2. データを再生成して再配置
+
+```
+node tools/scripts/prepare-ocr-dataset.mjs path/to/mhwu-ocr-dataset.json tools/ocr-dataset
+cp tools/ocr-dataset/images/* tools/tesstrain/data/mhwu-ground-truth/
+```
+
+3. 再学習
+
+```
+cd tools/tesstrain
+gmake training MODEL_NAME=mhwu START_MODEL=jpn TESSDATA=../tessdata_best
+gmake traineddata MODEL_NAME=mhwu
+```
 
 ---
 
