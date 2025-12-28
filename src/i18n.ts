@@ -93,6 +93,14 @@ const resources = {
 			"save.ocr.auto.locked": "保存済み（待機に戻るまで停止）",
 			"save.ocr.auto.requirements":
 				"カメラ起動・範囲指定・テーブル選択が必要です。",
+			"save.ocr.dev.title": "開発者モード",
+			"save.ocr.dev.description":
+				"OCRの画像とラベルを保存してデータ収集します。",
+			"save.ocr.dev.on": "有効",
+			"save.ocr.dev.off": "無効",
+			"save.ocr.dev.samples": "サンプル: {count} 件",
+			"save.ocr.dev.export": "エクスポート",
+			"save.ocr.dev.clear": "クリア",
 			"save.headers.series": "シリーズ",
 			"save.headers.group": "グループ",
 			"save.headers.favorite": "お気に入り",
@@ -255,6 +263,14 @@ const resources = {
 			"save.ocr.auto.locked": "Saved (waiting for idle screen)",
 			"save.ocr.auto.requirements":
 				"Start the camera, select a region, and choose a table.",
+			"save.ocr.dev.title": "Developer mode",
+			"save.ocr.dev.description":
+				"Save OCR images and labels for dataset collection.",
+			"save.ocr.dev.on": "On",
+			"save.ocr.dev.off": "Off",
+			"save.ocr.dev.samples": "Samples: {count}",
+			"save.ocr.dev.export": "Export",
+			"save.ocr.dev.clear": "Clear",
 			"save.headers.series": "Series",
 			"save.headers.group": "Group",
 			"save.headers.favorite": "Favorite",

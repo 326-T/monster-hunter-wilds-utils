@@ -9,6 +9,11 @@ import {
 	preprocessCanvas,
 } from "../../lib/ocr";
 import {
+	loadDataset,
+	saveDataset,
+	type OcrDatasetSample,
+} from "../../lib/ocrDataset";
+import {
 	getSkillLabel,
 	HIDDEN_SKILL_LABEL,
 	UNKNOWN_SKILL_LABEL,
@@ -240,6 +245,10 @@ export function OcrCapture({
 	const [autoState, setAutoState] = useState<"waiting" | "locked">("waiting");
 	const [autoSpeed, setAutoSpeed] = useState<AutoSpeedKey>("medium");
 	const [autoWaitSignal, setAutoWaitSignal] = useState(false);
+	const devMode = import.meta.env.DEV;
+	const [dataset, setDataset] = useState<OcrDatasetSample[]>(() =>
+		devMode ? loadDataset() : [],
+	);
 	const [result, setResult] = useState<{
 		entryId: string;
 		cursorId: number;
@@ -254,6 +263,7 @@ export function OcrCapture({
 	const workerPromiseRef = useRef<Promise<TesseractWorker> | null>(null);
 	const autoInFlightRef = useRef(false);
 	const whitelistRef = useRef("");
+	const langPathRef = useRef<string | null>(null);
 	const hasWebGpu = typeof navigator !== "undefined" && "gpu" in navigator;
 
 	const roiReady =
@@ -272,17 +282,43 @@ export function OcrCapture({
 		[language, seriesOptions, groupOptions],
 	);
 
+	const resolveLangPath = useCallback(async () => {
+		if (langPathRef.current !== null) {
+			return langPathRef.current || undefined;
+		}
+		try {
+			const response = await fetch(`/tessdata/${OCR_LANGUAGE}.traineddata`, {
+				method: "HEAD",
+			});
+			if (response.ok) {
+				langPathRef.current = "/tessdata";
+				return langPathRef.current;
+			}
+		} catch {
+			// fall through to default path
+		}
+		langPathRef.current = "";
+		return undefined;
+	}, []);
+
 	const initWorker = useCallback(async () => {
 		if (workerRef.current) return workerRef.current;
 		if (workerPromiseRef.current) return workerPromiseRef.current;
 		const { createWorker } = await import("tesseract.js");
 		const promise = (async () => {
-			const worker = await createWorker(OCR_LANGUAGE, 1, {
+			const langPath = await resolveLangPath();
+			const workerOptions: Parameters<typeof createWorker>[2] = {
 				logger: (message: LoggerMessage) => {
 					if (message.status === "recognizing text") {
 						setOcrProgress(Math.round(message.progress * 100));
 					}
 				},
+			};
+			if (langPath) {
+				workerOptions.langPath = langPath;
+			}
+			const worker = await createWorker(OCR_LANGUAGE, 1, {
+				...workerOptions,
 			});
 			workerRef.current = worker;
 			return worker;
@@ -295,7 +331,7 @@ export function OcrCapture({
 				workerPromiseRef.current = null;
 			}
 		}
-	}, []);
+	}, [resolveLangPath]);
 
 	const applyWhitelist = useCallback(
 		async (worker: TesseractWorker) => {
@@ -305,6 +341,34 @@ export function OcrCapture({
 		},
 		[whitelist],
 	);
+
+	const recordDatasetSample = useCallback((sample: OcrDatasetSample) => {
+		if (!devMode) return;
+		setDataset((prev) => {
+			const next = prev.filter((entry) => entry.entryId !== sample.entryId);
+			return [sample, ...next];
+		});
+	}, []);
+
+	const updateDatasetLabel = useCallback(
+		(
+			entryId: string,
+			updates: Partial<Pick<OcrDatasetSample, "labelSeries" | "labelGroup">>,
+		) => {
+			if (!devMode) return;
+			setDataset((prev) =>
+				prev.map((entry) =>
+					entry.entryId === entryId ? { ...entry, ...updates } : entry,
+				),
+			);
+		},
+		[],
+	);
+
+	useEffect(() => {
+		if (!devMode) return;
+		saveDataset(dataset);
+	}, [dataset]);
 
 	const handleStart = useCallback(async () => {
 		setOcrStatus("idle");
@@ -445,6 +509,20 @@ export function OcrCapture({
 							groupMatch.skill,
 							seriesMatch.skill,
 						);
+						recordDatasetSample({
+							entryId,
+							createdAt: new Date().toISOString(),
+							language,
+							tableKey: selectedTableKey,
+							cursorId,
+								seriesSkill: seriesMatch.skill,
+								groupSkill: groupMatch.skill,
+								labelSeries: seriesMatch.skill,
+								labelGroup: groupMatch.skill,
+								rawText: text,
+								imageDataUrl: processedCanvas.toDataURL("image/png"),
+								source: "auto",
+							});
 						setResult({
 							entryId,
 							cursorId,
@@ -480,7 +558,9 @@ export function OcrCapture({
 		captureCanvas,
 		groupOptions,
 		initWorker,
+		language,
 		onAddEntry,
+		recordDatasetSample,
 		selectedTableKey,
 		seriesOptions,
 		t,
@@ -520,6 +600,20 @@ export function OcrCapture({
 				groupSkill,
 				seriesSkill,
 			);
+			recordDatasetSample({
+				entryId,
+				createdAt: new Date().toISOString(),
+				language,
+				tableKey: selectedTableKey,
+				cursorId,
+				seriesSkill,
+				groupSkill,
+				labelSeries: seriesSkill,
+				labelGroup: groupSkill,
+				rawText: text,
+				imageDataUrl: processedCanvas.toDataURL("image/png"),
+				source: "manual",
+			});
 			setResult({
 				entryId,
 				cursorId,
@@ -539,7 +633,9 @@ export function OcrCapture({
 		captureCanvas,
 		groupOptions,
 		initWorker,
+		language,
 		onAddEntry,
+		recordDatasetSample,
 		selectedTableKey,
 		seriesOptions,
 		t,
@@ -837,6 +933,9 @@ export function OcrCapture({
 											onUpdateEntry(prev.tableKey, prev.entryId, {
 												seriesSkill: nextValue,
 											});
+											updateDatasetLabel(prev.entryId, {
+												labelSeries: nextValue,
+											});
 											return { ...prev, seriesSkill: nextValue };
 										});
 									}}
@@ -859,6 +958,9 @@ export function OcrCapture({
 											if (!prev) return prev;
 											onUpdateEntry(prev.tableKey, prev.entryId, {
 												groupSkill: nextValue,
+											});
+											updateDatasetLabel(prev.entryId, {
+												labelGroup: nextValue,
 											});
 											return { ...prev, groupSkill: nextValue };
 										});

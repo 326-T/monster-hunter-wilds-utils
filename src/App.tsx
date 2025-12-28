@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CursorView } from "./components/cursor/CursorView";
+import { OcrDatasetView } from "./components/dev/OcrDatasetView";
 import { SaveView } from "./components/save/SaveView";
 import { Button } from "./components/ui/button";
 import { VerifyView } from "./components/verify/VerifyView";
@@ -15,6 +16,10 @@ function App() {
 	const { groupOptions, seriesOptions, isLoading, error } = useSkillOptions();
 	const { t, i18n } = useTranslation();
 	const language = i18n.language === "en" ? "en" : "ja";
+	const isDevDatasetView =
+		import.meta.env.DEV &&
+		typeof window !== "undefined" &&
+		window.location.pathname === "/dev/ocr-dataset";
 	const {
 		tables,
 		cursor,
@@ -35,6 +40,16 @@ function App() {
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
+
+	if (isDevDatasetView) {
+		return (
+			<OcrDatasetView
+				seriesOptions={seriesOptions}
+				groupOptions={groupOptions}
+				language={language}
+			/>
+		);
+	}
 
 	return (
 		<div className="min-h-screen">
