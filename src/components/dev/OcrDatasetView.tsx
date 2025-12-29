@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	loadDataset,
+	reloadDatasetFromDbOnly,
 	saveDataset,
+	loadReviewedIdsAsync,
+	reloadReviewedIdsAsync,
+	saveReviewedIds,
 	type OcrDatasetSample,
 } from "../../lib/ocrDataset";
 import {
@@ -18,13 +22,18 @@ type OcrDatasetViewProps = {
 	language: "ja" | "en";
 };
 
-const REVIEWED_KEY = "mhwu.ocr.dataset.reviewed.v1";
 const PAGE_SIZE = 12;
 
 const buildLabelOptions = (options: string[]) => {
 	return Array.from(
 		new Set([UNKNOWN_SKILL_LABEL, HIDDEN_SKILL_LABEL, ...options]),
 	);
+};
+
+const formatTimestamp = (value: string) => {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value || "-";
+	return date.toLocaleString();
 };
 
 export function OcrDatasetView({
@@ -35,41 +44,57 @@ export function OcrDatasetView({
 	const [dataset, setDataset] = useState<OcrDatasetSample[]>(() =>
 		loadDataset(),
 	);
+	const [datasetReady, setDatasetReady] = useState(false);
 	const [reviewedIds, setReviewedIds] = useState<string[]>([]);
+	const [reviewedReady, setReviewedReady] = useState(false);
 	const [viewMode, setViewMode] = useState<"unreviewed" | "reviewed">(
 		"unreviewed",
 	);
 	const [page, setPage] = useState(1);
+	const importInputRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
+		if (!datasetReady) return;
 		saveDataset(dataset);
-	}, [dataset]);
+	}, [dataset, datasetReady]);
 
 	useEffect(() => {
-		if (typeof window === "undefined") return;
-		try {
-			const raw = window.localStorage.getItem(REVIEWED_KEY);
-			if (!raw) return;
-			const parsed = JSON.parse(raw) as string[];
-			if (Array.isArray(parsed)) {
-				setReviewedIds(parsed.filter(Boolean));
-			}
-		} catch {
-			setReviewedIds([]);
-		}
+		let active = true;
+		void reloadDatasetFromDbOnly().then((data) => {
+			if (!active) return;
+			setDataset(data);
+			setDatasetReady(true);
+			setPage(1);
+		});
+		return () => {
+			active = false;
+		};
 	}, []);
 
 	useEffect(() => {
-		if (typeof window === "undefined") return;
-		window.localStorage.setItem(REVIEWED_KEY, JSON.stringify(reviewedIds));
-	}, [reviewedIds]);
+		let active = true;
+		void reloadReviewedIdsAsync().then((ids) => {
+			if (!active) return;
+			setReviewedIds(ids);
+			setReviewedReady(true);
+		});
+		return () => {
+			active = false;
+		};
+	}, []);
 
 	useEffect(() => {
+		if (!reviewedReady) return;
+		saveReviewedIds(reviewedIds);
+	}, [reviewedIds, reviewedReady]);
+
+	useEffect(() => {
+		if (!datasetReady || !reviewedReady) return;
 		setReviewedIds((prev) => {
 			const validIds = new Set(dataset.map((entry) => entry.entryId));
 			return prev.filter((id) => validIds.has(id));
 		});
-	}, [dataset]);
+	}, [dataset, datasetReady, reviewedReady]);
 
 	const seriesLabelOptions = useMemo(
 		() => buildLabelOptions(seriesOptions),
@@ -80,12 +105,23 @@ export function OcrDatasetView({
 		[groupOptions],
 	);
 
+	const dedupedSamples = useMemo(() => {
+		const map = new Map<string, OcrDatasetSample>();
+		dataset.forEach((sample) => {
+			if (map.has(sample.entryId)) {
+				map.delete(sample.entryId);
+			}
+			map.set(sample.entryId, sample);
+		});
+		return Array.from(map.values());
+	}, [dataset]);
+
 	const sortedSamples = useMemo(() => {
-		return [...dataset].sort(
+		return [...dedupedSamples].sort(
 			(a, b) =>
 				new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 		);
-	}, [dataset]);
+	}, [dedupedSamples]);
 
 	const reviewedSet = useMemo(() => new Set(reviewedIds), [reviewedIds]);
 	const unreviewedSamples = useMemo(
@@ -105,8 +141,78 @@ export function OcrDatasetView({
 	);
 
 	const handleReload = () => {
-		setDataset(loadDataset());
+		void reloadDatasetFromDbOnly().then((data) => {
+			setDataset(data);
+			setDatasetReady(true);
+			setPage(1);
+		});
+		void reloadReviewedIdsAsync().then((ids) => {
+			setReviewedIds(ids);
+			setReviewedReady(true);
+		});
 	};
+
+	const handleExport = async () => {
+		const payload = {
+			version: 1,
+			createdAt: new Date().toISOString(),
+			samples: dedupedSamples,
+			reviewedIds,
+		};
+		const blob = new Blob([JSON.stringify(payload, null, 2)], {
+			type: "application/json",
+		});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		link.download = `mhwu-ocr-labeling-${timestamp}.json`;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+		URL.revokeObjectURL(url);
+	};
+
+	const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const file = event.target.files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				const parsed = JSON.parse(String(reader.result || "{}")) as {
+					samples?: OcrDatasetSample[];
+					reviewedIds?: string[];
+				};
+				if (Array.isArray(parsed.samples)) {
+					setDataset(parsed.samples);
+					setDatasetReady(true);
+				}
+				if (Array.isArray(parsed.reviewedIds)) {
+					setReviewedIds(parsed.reviewedIds.filter(Boolean));
+					setReviewedReady(true);
+				}
+				setPage(1);
+			} catch {
+				// ignore invalid files
+			}
+		};
+		reader.readAsText(file);
+		event.target.value = "";
+	};
+
+	const handleImportClick = () => {
+		importInputRef.current?.click();
+	};
+
+	useEffect(() => {
+		const handleUpdate = () => {
+			handleReload();
+		};
+		window.addEventListener("mhwu-ocr-dataset-updated", handleUpdate);
+		return () => {
+			window.removeEventListener("mhwu-ocr-dataset-updated", handleUpdate);
+		};
+	}, []);
 
 	const handleToggleReviewed = (entryId: string, nextValue: boolean) => {
 		setReviewedIds((prev) => {
@@ -178,6 +284,24 @@ export function OcrDatasetView({
 							<Button variant="outline" size="sm" onClick={handleReload}>
 								Reload
 							</Button>
+							<Button variant="outline" size="sm" onClick={handleExport}>
+								Export
+							</Button>
+							<input
+								ref={importInputRef}
+								type="file"
+								accept="application/json"
+								onChange={handleImport}
+								className="hidden"
+							/>
+							<Button
+								variant="outline"
+								size="sm"
+								type="button"
+								onClick={handleImportClick}
+							>
+								Import
+							</Button>
 						</div>
 					</div>
 
@@ -223,6 +347,7 @@ export function OcrDatasetView({
 													<span>Table: {sample.tableKey}</span>
 													<span>Lang: {sample.language}</span>
 													<span>Source: {sample.source}</span>
+													<span>Saved: {formatTimestamp(sample.createdAt)}</span>
 												</div>
 												<Button
 													variant={reviewedSet.has(sample.entryId) ? "default" : "outline"}

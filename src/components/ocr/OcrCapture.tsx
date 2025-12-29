@@ -10,6 +10,7 @@ import {
 } from "../../lib/ocr";
 import {
 	loadDataset,
+	loadDatasetAsync,
 	saveDataset,
 	type OcrDatasetSample,
 } from "../../lib/ocrDataset";
@@ -249,6 +250,7 @@ export function OcrCapture({
 	const [dataset, setDataset] = useState<OcrDatasetSample[]>(() =>
 		devMode ? loadDataset() : [],
 	);
+	const [datasetReady, setDatasetReady] = useState(!devMode);
 	const [result, setResult] = useState<{
 		entryId: string;
 		cursorId: number;
@@ -367,8 +369,29 @@ export function OcrCapture({
 
 	useEffect(() => {
 		if (!devMode) return;
+		if (!datasetReady) return;
 		saveDataset(dataset);
-	}, [dataset]);
+	}, [dataset, datasetReady, devMode]);
+
+	useEffect(() => {
+		if (!devMode) return;
+		let active = true;
+		void loadDatasetAsync().then((data) => {
+			if (!active) return;
+			setDataset((prev) => {
+				if (prev.length === 0) return data;
+				const map = new Map(data.map((entry) => [entry.entryId, entry]));
+				prev.forEach((entry) => {
+					map.set(entry.entryId, entry);
+				});
+				return Array.from(map.values());
+			});
+			setDatasetReady(true);
+		});
+		return () => {
+			active = false;
+		};
+	}, [devMode]);
 
 	const handleStart = useCallback(async () => {
 		setOcrStatus("idle");
