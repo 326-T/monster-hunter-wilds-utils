@@ -8,18 +8,14 @@ import {
 	type SkillMatch,
 	preprocessCanvas,
 } from "../../lib/ocr";
-import {
-	loadDataset,
-	loadDatasetAsync,
-	saveDataset,
-	type OcrDatasetSample,
-} from "../../lib/ocrDataset";
+import type { OcrDatasetSample } from "../../lib/ocrDataset";
 import {
 	getSkillLabel,
 	HIDDEN_SKILL_LABEL,
 	UNKNOWN_SKILL_LABEL,
 } from "../../lib/skills";
 import { cn } from "../../lib/utils";
+import { useOcrDataset } from "../../hooks/useOcrDataset";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Select } from "../ui/select";
@@ -247,10 +243,7 @@ export function OcrCapture({
 	const [autoSpeed, setAutoSpeed] = useState<AutoSpeedKey>("medium");
 	const [autoWaitSignal, setAutoWaitSignal] = useState(false);
 	const devMode = import.meta.env.DEV;
-	const [dataset, setDataset] = useState<OcrDatasetSample[]>(() =>
-		devMode ? loadDataset() : [],
-	);
-	const [datasetReady, setDatasetReady] = useState(!devMode);
+	const { addSample, updateSample } = useOcrDataset({ enabled: devMode });
 	const [result, setResult] = useState<{
 		entryId: string;
 		cursorId: number;
@@ -344,13 +337,13 @@ export function OcrCapture({
 		[whitelist],
 	);
 
-	const recordDatasetSample = useCallback((sample: OcrDatasetSample) => {
-		if (!devMode) return;
-		setDataset((prev) => {
-			const next = prev.filter((entry) => entry.entryId !== sample.entryId);
-			return [sample, ...next];
-		});
-	}, []);
+	const recordDatasetSample = useCallback(
+		(sample: OcrDatasetSample) => {
+			if (!devMode) return;
+			addSample(sample);
+		},
+		[addSample],
+	);
 
 	const updateDatasetLabel = useCallback(
 		(
@@ -358,40 +351,10 @@ export function OcrCapture({
 			updates: Partial<Pick<OcrDatasetSample, "labelSeries" | "labelGroup">>,
 		) => {
 			if (!devMode) return;
-			setDataset((prev) =>
-				prev.map((entry) =>
-					entry.entryId === entryId ? { ...entry, ...updates } : entry,
-				),
-			);
+			updateSample(entryId, updates);
 		},
-		[],
+		[updateSample],
 	);
-
-	useEffect(() => {
-		if (!devMode) return;
-		if (!datasetReady) return;
-		saveDataset(dataset);
-	}, [dataset, datasetReady, devMode]);
-
-	useEffect(() => {
-		if (!devMode) return;
-		let active = true;
-		void loadDatasetAsync().then((data) => {
-			if (!active) return;
-			setDataset((prev) => {
-				if (prev.length === 0) return data;
-				const map = new Map(data.map((entry) => [entry.entryId, entry]));
-				prev.forEach((entry) => {
-					map.set(entry.entryId, entry);
-				});
-				return Array.from(map.values());
-			});
-			setDatasetReady(true);
-		});
-		return () => {
-			active = false;
-		};
-	}, [devMode]);
 
 	const handleStart = useCallback(async () => {
 		setOcrStatus("idle");
@@ -538,14 +501,14 @@ export function OcrCapture({
 							language,
 							tableKey: selectedTableKey,
 							cursorId,
-								seriesSkill: seriesMatch.skill,
-								groupSkill: groupMatch.skill,
-								labelSeries: seriesMatch.skill,
-								labelGroup: groupMatch.skill,
-								rawText: text,
-								imageDataUrl: processedCanvas.toDataURL("image/png"),
-								source: "auto",
-							});
+							seriesSkill: seriesMatch.skill,
+							groupSkill: groupMatch.skill,
+							labelSeries: seriesMatch.skill,
+							labelGroup: groupMatch.skill,
+							rawText: text,
+							imageDataUrl: processedCanvas.toDataURL("image/png"),
+							source: "auto",
+						});
 						setResult({
 							entryId,
 							cursorId,

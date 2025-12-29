@@ -3,11 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "./i18n";
 import App from "./App.tsx";
-import {
-	clearDataset,
-	exportDataset,
-	getDatasetAsync,
-} from "./lib/ocrDataset";
+import { clearDataset, exportDataset, getDatasetAsync } from "./lib/ocrDataset";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

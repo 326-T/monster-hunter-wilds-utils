@@ -1,33 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	allTables,
 	ATTRIBUTES,
 	createId,
-	CURSOR_KEY,
-	STORAGE_KEY,
 	UNKNOWN_SKILL_LABEL,
 } from "../lib/skills";
 import type { CursorState, TableEntry, TableState } from "../lib/skills";
+import {
+	loadTableStateAsync,
+	loadTableStateSnapshot,
+	saveCursorState,
+	saveTableState,
+} from "../lib/tableStateDb";
 
 type StoredTableEntry = Omit<TableEntry, "cursorId"> & { cursorId?: number };
-
 type StoredTableState = Record<string, StoredTableEntry[]>;
-
-const loadFromStorage = <T>(key: string, fallback: T): T => {
-	if (typeof window === "undefined") return fallback;
-	try {
-		const raw = window.localStorage.getItem(key);
-		if (!raw) return fallback;
-		return JSON.parse(raw) as T;
-	} catch {
-		return fallback;
-	}
-};
-
-const saveToStorage = <T>(key: string, value: T) => {
-	if (typeof window === "undefined") return;
-	window.localStorage.setItem(key, JSON.stringify(value));
-};
 
 const normalizeTableState = (state: StoredTableState): TableState => {
 	const normalized: TableState = {};
@@ -62,20 +49,38 @@ const normalizeCursorState = (value: unknown): CursorState => {
 };
 
 export function useTableState() {
-	const [tables, setTables] = useState<TableState>(() =>
-		normalizeTableState(loadFromStorage<StoredTableState>(STORAGE_KEY, {})),
-	);
-	const [cursor, setCursor] = useState<CursorState>(() =>
-		normalizeCursorState(loadFromStorage<unknown>(CURSOR_KEY, 0)),
-	);
+	const initialSnapshot = loadTableStateSnapshot();
+	const [tables, setTables] = useState<TableState>(initialSnapshot.tables);
+	const [cursor, setCursor] = useState<CursorState>(initialSnapshot.cursor);
+	const [ready, setReady] = useState(false);
+	const manualOverrideRef = useRef(false);
 
 	useEffect(() => {
-		saveToStorage(STORAGE_KEY, tables);
-	}, [tables]);
+		let active = true;
+		void loadTableStateAsync().then((snapshot) => {
+			if (!active) return;
+			if (manualOverrideRef.current) {
+				setReady(true);
+				return;
+			}
+			setTables(snapshot.tables);
+			setCursor(snapshot.cursor);
+			setReady(true);
+		});
+		return () => {
+			active = false;
+		};
+	}, []);
 
 	useEffect(() => {
-		saveToStorage(CURSOR_KEY, cursor);
-	}, [cursor]);
+		if (!ready) return;
+		saveTableState(tables);
+	}, [tables, ready]);
+
+	useEffect(() => {
+		if (!ready) return;
+		saveCursorState(cursor);
+	}, [cursor, ready]);
 
 	const addEntry = useCallback(
 		(tableKey: string, groupSkill: string, seriesSkill: string) => {
@@ -209,8 +214,12 @@ export function useTableState() {
 		const cursorSource =
 			record.cursor ?? record.cursorState ?? record.cursorByAttribute ?? 0;
 		const nextCursor = normalizeCursorState(cursorSource);
+		manualOverrideRef.current = true;
 		setTables(nextTables);
 		setCursor(nextCursor);
+		saveTableState(nextTables);
+		saveCursorState(nextCursor);
+		setReady(true);
 		return { ok: true };
 	}, []);
 

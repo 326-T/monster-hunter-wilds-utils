@@ -5,34 +5,6 @@
 
 ## localStorage
 
-### mhwu.tableEntries.v2
-
-武器×属性テーブルの抽選結果を保持します。  
-キーは `weapon::attribute` 形式です（例: `大剣::火属性`）。
-
-```json
-{
-  "大剣::火属性": [
-    {
-      "id": "uuid",
-      "groupSkill": "ヌシの誇り",
-      "seriesSkill": "鎧竜の守護",
-      "favorite": true,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "cursorId": 12
-    }
-  ]
-}
-```
-
-### mhwu.attributeCursors.v2
-
-現在のカーソル位置（数値）。
-
-```json
-3
-```
-
 ### mhwu.groupSkillVisibility.v1 / mhwu.seriesSkillVisibility.v1
 
 表示するスキルの配列。
@@ -49,21 +21,53 @@
 "ja"
 ```
 
-### OCR 互換用キー
+### 互換用キー
 
 以下は移行読み込みのためにのみ参照します（新規保存は行いません）。
 
-- `mhwu.ocr.dataset`
-- `mhwu.ocr.dataset.v1`
-- `mhwu.ocr.dataset.reviewed.v1`
+- `mhwu.tableEntries.v2`
+- `mhwu.attributeCursors.v2`
+
+移行完了後は以下にリネームされます（監査用の退避）。
+
+- `mhwu.tableEntries.v2.migrated`
+- `mhwu.attributeCursors.v2.migrated`
 
 ## IndexedDB
+
+### DB: mhwu-app (version 1)
+
+#### objectStore: tableEntries
+
+キー: `id` (string)
+値: `TableEntryRecord`
+
+```json
+{
+  "id": "uuid",
+  "tableKey": "大剣::火属性",
+  "groupSkill": "ヌシの誇り",
+  "seriesSkill": "鎧竜の守護",
+  "favorite": true,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "cursorId": 12
+}
+```
+
+#### objectStore: cursorState
+
+キー: `cursor`
+値: number
+
+```json
+3
+```
 
 ### DB: mhwu-ocr (version 2)
 
 #### objectStore: ocrDataset
 
-キー: `entryId` (string)  
+キー: `entryId` (string)
 値: `OcrDatasetSample`
 
 ```json
@@ -85,7 +89,7 @@
 
 #### objectStore: ocrReviewed
 
-キー: `entryId` (string)  
+キー: `entryId` (string)
 値: `true`
 
 ```json

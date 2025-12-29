@@ -13,9 +13,6 @@ export type OcrDatasetSample = {
 	source: "manual" | "auto";
 };
 
-const OCR_DATASET_KEY = "mhwu.ocr.dataset";
-const OCR_DATASET_LEGACY_KEYS = ["mhwu.ocr.dataset.v1"] as const;
-const OCR_REVIEWED_KEY = "mhwu.ocr.dataset.reviewed.v1";
 const DB_NAME = "mhwu-ocr";
 const DB_VERSION = 2;
 const DATASET_STORE = "ocrDataset";
@@ -30,9 +27,6 @@ let reviewedDbChecked = false;
 let reviewedLoadPromise: Promise<string[]> | null = null;
 
 const canUseIndexedDb = () => typeof indexedDB !== "undefined";
-const canUseLocalStorage = () =>
-	typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-
 const requestToPromise = <T>(request: IDBRequest<T>) =>
 	new Promise<T>((resolve, reject) => {
 		request.onsuccess = () => resolve(request.result);
@@ -53,34 +47,6 @@ const isDatasetSample = (value: unknown): value is OcrDatasetSample => {
 		typeof candidate.entryId === "string" &&
 		typeof candidate.createdAt === "string"
 	);
-};
-
-const parseDatasetPayload = (value: unknown): OcrDatasetSample[] => {
-	if (Array.isArray(value)) {
-		return value.filter(isDatasetSample);
-	}
-	if (value && typeof value === "object") {
-		const samples = (value as { samples?: unknown }).samples;
-		if (Array.isArray(samples)) {
-			return samples.filter(isDatasetSample);
-		}
-	}
-	return [];
-};
-
-const parseReviewedPayload = (value: unknown): string[] => {
-	if (Array.isArray(value)) {
-		return value.filter((entry): entry is string => typeof entry === "string");
-	}
-	if (value && typeof value === "object") {
-		const reviewedIds = (value as { reviewedIds?: unknown }).reviewedIds;
-		if (Array.isArray(reviewedIds)) {
-			return reviewedIds.filter(
-				(entry): entry is string => typeof entry === "string",
-			);
-		}
-	}
-	return [];
 };
 
 const openDatasetDb = () =>
@@ -127,49 +93,22 @@ const readStoreKeys = async (
 	return keys;
 };
 
-const readReviewedLegacyFromDatasetStore = async (
-	db: IDBDatabase,
-): Promise<string[]> => {
-	const transaction = db.transaction(DATASET_STORE, "readonly");
-	const done = waitForTransaction(transaction);
-	const store = transaction.objectStore(DATASET_STORE);
-	const legacy = await requestToPromise(store.get(OCR_REVIEWED_KEY));
-	await done;
-	return parseReviewedPayload(legacy);
-};
-
 const readDatasetFromDb = async (): Promise<{
 	samples: OcrDatasetSample[];
-	legacyDetected: boolean;
 }> => {
 	if (!canUseIndexedDb()) {
-		return { samples: [], legacyDetected: false };
+		return { samples: [] };
 	}
 	const db = await openDatasetDb();
 	try {
 		const values = await readStoreValues<unknown>(db, DATASET_STORE);
 		const samples: OcrDatasetSample[] = [];
-		let legacySamples: OcrDatasetSample[] | null = null;
 		for (const value of values) {
 			if (isDatasetSample(value)) {
 				samples.push(value);
-				continue;
-			}
-			const parsed = parseDatasetPayload(value);
-			if (parsed.length > 0) {
-				if (!legacySamples || parsed.length > legacySamples.length) {
-					legacySamples = parsed;
-				}
 			}
 		}
-		const legacyDetected = Boolean(legacySamples);
-		if (samples.length > 0) {
-			return { samples, legacyDetected };
-		}
-		if (legacySamples) {
-			return { samples: legacySamples, legacyDetected: true };
-		}
-		return { samples: [], legacyDetected: false };
+		return { samples };
 	} finally {
 		db.close();
 	}
@@ -177,54 +116,17 @@ const readDatasetFromDb = async (): Promise<{
 
 const readReviewedFromDb = async (): Promise<{
 	ids: string[];
-	legacyDetected: boolean;
 }> => {
 	if (!canUseIndexedDb()) {
-		return { ids: [], legacyDetected: false };
+		return { ids: [] };
 	}
 	const db = await openDatasetDb();
 	try {
 		const keys = await readStoreKeys(db, REVIEWED_STORE);
 		const ids = keys.filter((key): key is string => typeof key === "string");
-		if (ids.length > 0) {
-			return { ids, legacyDetected: false };
-		}
-		const legacy = await readReviewedLegacyFromDatasetStore(db);
-		if (legacy.length > 0) {
-			return { ids: legacy, legacyDetected: true };
-		}
-		return { ids: [], legacyDetected: false };
+		return { ids };
 	} finally {
 		db.close();
-	}
-};
-
-const readDatasetFromLocalStorage = (): OcrDatasetSample[] => {
-	if (!canUseLocalStorage()) return [];
-	const keys = [OCR_DATASET_KEY, ...OCR_DATASET_LEGACY_KEYS];
-	for (const key of keys) {
-		const raw = window.localStorage.getItem(key);
-		if (!raw) continue;
-		try {
-			const parsed = JSON.parse(raw);
-			const samples = parseDatasetPayload(parsed);
-			if (samples.length > 0) return samples;
-		} catch {
-			continue;
-		}
-	}
-	return [];
-};
-
-const readReviewedFromLocalStorage = (): string[] => {
-	if (!canUseLocalStorage()) return [];
-	const raw = window.localStorage.getItem(OCR_REVIEWED_KEY);
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		return parseReviewedPayload(parsed);
-	} catch {
-		return [];
 	}
 };
 
@@ -241,19 +143,16 @@ const writeDatasetToDb = async (
 		if (!previousIds) {
 			store.clear();
 		}
-		samples.forEach((sample) => {
+		for (const sample of samples) {
 			store.put(sample, sample.entryId);
-		});
-		store.delete(OCR_DATASET_KEY);
-		OCR_DATASET_LEGACY_KEYS.forEach((key) => store.delete(key));
-		store.delete(OCR_REVIEWED_KEY);
+		}
 		if (previousIds) {
 			const nextIds = new Set(samples.map((sample) => sample.entryId));
-			previousIds.forEach((id) => {
+			for (const id of previousIds) {
 				if (!nextIds.has(id)) {
 					store.delete(id);
 				}
-			});
+			}
 		}
 		await done;
 	} finally {
@@ -271,16 +170,16 @@ const writeReviewedToDb = async (ids: string[], previousIds?: Set<string>) => {
 		if (!previousIds) {
 			store.clear();
 		}
-		ids.forEach((id) => {
+		for (const id of ids) {
 			store.put(true, id);
-		});
+		}
 		if (previousIds) {
 			const nextIds = new Set(ids);
-			previousIds.forEach((id) => {
+			for (const id of previousIds) {
 				if (!nextIds.has(id)) {
 					store.delete(id);
 				}
-			});
+			}
 		}
 		await done;
 	} finally {
@@ -295,17 +194,7 @@ export const loadDatasetAsync = async (): Promise<OcrDatasetSample[]> => {
 	if (datasetLoadPromise) return datasetLoadPromise;
 	datasetLoadPromise = (async () => {
 		try {
-			let { samples, legacyDetected } = await readDatasetFromDb();
-			if (legacyDetected && samples.length > 0) {
-				await writeDatasetToDb(samples);
-			}
-			if (samples.length === 0) {
-				const localSamples = readDatasetFromLocalStorage();
-				if (localSamples.length > 0) {
-					await writeDatasetToDb(localSamples);
-					samples = localSamples;
-				}
-			}
+			const { samples } = await readDatasetFromDb();
 			datasetCache = samples;
 			datasetDbChecked = true;
 			return samples;
@@ -317,28 +206,16 @@ export const loadDatasetAsync = async (): Promise<OcrDatasetSample[]> => {
 };
 
 export const reloadDatasetAsync = async (): Promise<OcrDatasetSample[]> => {
-	const { samples, legacyDetected } = await readDatasetFromDb();
-	let finalSamples = samples;
-	if (legacyDetected && samples.length > 0) {
-		await writeDatasetToDb(samples);
-	}
-	if (finalSamples.length === 0) {
-		const localSamples = readDatasetFromLocalStorage();
-		if (localSamples.length > 0) {
-			await writeDatasetToDb(localSamples);
-			finalSamples = localSamples;
-		}
-	}
-	datasetCache = finalSamples;
+	const { samples } = await readDatasetFromDb();
+	datasetCache = samples;
 	datasetDbChecked = true;
-	return finalSamples;
+	return samples;
 };
 
-export const reloadDatasetFromDbOnly = async (): Promise<OcrDatasetSample[]> => {
-	const { samples, legacyDetected } = await readDatasetFromDb();
-	if (legacyDetected && samples.length > 0) {
-		await writeDatasetToDb(samples);
-	}
+export const reloadDatasetFromDbOnly = async (): Promise<
+	OcrDatasetSample[]
+> => {
+	const { samples } = await readDatasetFromDb();
 	datasetCache = samples;
 	datasetDbChecked = true;
 	return samples;
@@ -375,12 +252,6 @@ export const clearDataset = () => {
 			}
 		})();
 	}
-	if (canUseLocalStorage()) {
-		window.localStorage.removeItem(OCR_DATASET_KEY);
-		OCR_DATASET_LEGACY_KEYS.forEach((key) =>
-			window.localStorage.removeItem(key),
-		);
-	}
 };
 
 export const getDatasetAsync = async () => loadDatasetAsync();
@@ -413,17 +284,7 @@ export const loadReviewedIdsAsync = async (): Promise<string[]> => {
 	if (reviewedLoadPromise) return reviewedLoadPromise;
 	reviewedLoadPromise = (async () => {
 		try {
-			let { ids, legacyDetected } = await readReviewedFromDb();
-			if (legacyDetected && ids.length > 0) {
-				await writeReviewedToDb(ids);
-			}
-			if (ids.length === 0) {
-				const localIds = readReviewedFromLocalStorage();
-				if (localIds.length > 0) {
-					await writeReviewedToDb(localIds);
-					ids = localIds;
-				}
-			}
+			const { ids } = await readReviewedFromDb();
 			reviewedCache = ids;
 			reviewedDbChecked = true;
 			return ids;
@@ -435,21 +296,10 @@ export const loadReviewedIdsAsync = async (): Promise<string[]> => {
 };
 
 export const reloadReviewedIdsAsync = async (): Promise<string[]> => {
-	const { ids, legacyDetected } = await readReviewedFromDb();
-	let finalIds = ids;
-	if (legacyDetected && ids.length > 0) {
-		await writeReviewedToDb(ids);
-	}
-	if (finalIds.length === 0) {
-		const localIds = readReviewedFromLocalStorage();
-		if (localIds.length > 0) {
-			await writeReviewedToDb(localIds);
-			finalIds = localIds;
-		}
-	}
-	reviewedCache = finalIds;
+	const { ids } = await readReviewedFromDb();
+	reviewedCache = ids;
 	reviewedDbChecked = true;
-	return finalIds;
+	return ids;
 };
 
 export const saveReviewedIds = (ids: string[]) => {
@@ -475,8 +325,5 @@ export const clearReviewedIds = () => {
 				db.close();
 			}
 		})();
-	}
-	if (canUseLocalStorage()) {
-		window.localStorage.removeItem(OCR_REVIEWED_KEY);
 	}
 };

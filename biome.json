@@ -25,7 +25,12 @@
 		}
 	},
 	"files": {
-		"ignore": ["dist", "node_modules"]
+		"ignore": [
+			"dist",
+			"node_modules",
+			"tools/tesstrain/.venv",
+			"tools/ocr-dataset"
+		]
 	},
 	"overrides": [
 		{

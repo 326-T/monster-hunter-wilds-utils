@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-	loadDataset,
-	reloadDatasetFromDbOnly,
-	saveDataset,
-	loadReviewedIdsAsync,
-	reloadReviewedIdsAsync,
-	saveReviewedIds,
-	type OcrDatasetSample,
-} from "../../lib/ocrDataset";
+import type { OcrDatasetSample } from "../../lib/ocrDataset";
 import {
 	getSkillLabel,
 	HIDDEN_SKILL_LABEL,
 	UNKNOWN_SKILL_LABEL,
 } from "../../lib/skills";
+import { useOcrDataset } from "../../hooks/useOcrDataset";
 import { Button } from "../ui/button";
+import { Label } from "../ui/label";
 import { Select } from "../ui/select";
 
 type OcrDatasetViewProps = {
@@ -41,12 +35,16 @@ export function OcrDatasetView({
 	groupOptions,
 	language,
 }: OcrDatasetViewProps) {
-	const [dataset, setDataset] = useState<OcrDatasetSample[]>(() =>
-		loadDataset(),
-	);
-	const [datasetReady, setDatasetReady] = useState(false);
-	const [reviewedIds, setReviewedIds] = useState<string[]>([]);
-	const [reviewedReady, setReviewedReady] = useState(false);
+	const {
+		dataset,
+		reviewedIds,
+		reload,
+		reloadReviewed,
+		replaceDataset,
+		replaceReviewedIds,
+		toggleReviewed,
+		updateSample,
+	} = useOcrDataset({ enabled: true, listenUpdates: true });
 	const [viewMode, setViewMode] = useState<"unreviewed" | "reviewed">(
 		"unreviewed",
 	);
@@ -54,47 +52,18 @@ export function OcrDatasetView({
 	const importInputRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
-		if (!datasetReady) return;
-		saveDataset(dataset);
-	}, [dataset, datasetReady]);
-
-	useEffect(() => {
-		let active = true;
-		void reloadDatasetFromDbOnly().then((data) => {
-			if (!active) return;
-			setDataset(data);
-			setDatasetReady(true);
+		if (dataset.length >= 0) {
 			setPage(1);
-		});
-		return () => {
-			active = false;
-		};
-	}, []);
+		}
+	}, [dataset.length]);
 
 	useEffect(() => {
-		let active = true;
-		void reloadReviewedIdsAsync().then((ids) => {
-			if (!active) return;
-			setReviewedIds(ids);
-			setReviewedReady(true);
-		});
-		return () => {
-			active = false;
-		};
-	}, []);
-
-	useEffect(() => {
-		if (!reviewedReady) return;
-		saveReviewedIds(reviewedIds);
-	}, [reviewedIds, reviewedReady]);
-
-	useEffect(() => {
-		if (!datasetReady || !reviewedReady) return;
-		setReviewedIds((prev) => {
-			const validIds = new Set(dataset.map((entry) => entry.entryId));
-			return prev.filter((id) => validIds.has(id));
-		});
-	}, [dataset, datasetReady, reviewedReady]);
+		const validIds = new Set(dataset.map((entry) => entry.entryId));
+		const nextReviewed = reviewedIds.filter((id) => validIds.has(id));
+		if (nextReviewed.length !== reviewedIds.length) {
+			replaceReviewedIds(nextReviewed);
+		}
+	}, [dataset, replaceReviewedIds, reviewedIds]);
 
 	const seriesLabelOptions = useMemo(
 		() => buildLabelOptions(seriesOptions),
@@ -107,12 +76,12 @@ export function OcrDatasetView({
 
 	const dedupedSamples = useMemo(() => {
 		const map = new Map<string, OcrDatasetSample>();
-		dataset.forEach((sample) => {
+		for (const sample of dataset) {
 			if (map.has(sample.entryId)) {
 				map.delete(sample.entryId);
 			}
 			map.set(sample.entryId, sample);
-		});
+		}
 		return Array.from(map.values());
 	}, [dataset]);
 
@@ -141,15 +110,10 @@ export function OcrDatasetView({
 	);
 
 	const handleReload = () => {
-		void reloadDatasetFromDbOnly().then((data) => {
-			setDataset(data);
-			setDatasetReady(true);
+		void reload().then(() => {
 			setPage(1);
 		});
-		void reloadReviewedIdsAsync().then((ids) => {
-			setReviewedIds(ids);
-			setReviewedReady(true);
-		});
+		void reloadReviewed();
 	};
 
 	const handleExport = async () => {
@@ -184,12 +148,10 @@ export function OcrDatasetView({
 					reviewedIds?: string[];
 				};
 				if (Array.isArray(parsed.samples)) {
-					setDataset(parsed.samples);
-					setDatasetReady(true);
+					replaceDataset(parsed.samples);
 				}
 				if (Array.isArray(parsed.reviewedIds)) {
-					setReviewedIds(parsed.reviewedIds.filter(Boolean));
-					setReviewedReady(true);
+					replaceReviewedIds(parsed.reviewedIds.filter(Boolean));
 				}
 				setPage(1);
 			} catch {
@@ -204,38 +166,23 @@ export function OcrDatasetView({
 		importInputRef.current?.click();
 	};
 
-	useEffect(() => {
-		const handleUpdate = () => {
-			handleReload();
-		};
-		window.addEventListener("mhwu-ocr-dataset-updated", handleUpdate);
-		return () => {
-			window.removeEventListener("mhwu-ocr-dataset-updated", handleUpdate);
-		};
-	}, []);
-
 	const handleToggleReviewed = (entryId: string, nextValue: boolean) => {
-		setReviewedIds((prev) => {
-			if (nextValue) {
-				return prev.includes(entryId) ? prev : [...prev, entryId];
-			}
-			return prev.filter((id) => id !== entryId);
-		});
+		toggleReviewed(entryId, nextValue);
 	};
 
 	const handleMarkPageReviewed = () => {
 		if (viewMode !== "unreviewed") return;
-		setReviewedIds((prev) => {
-			const next = new Set(prev);
-			pageSamples.forEach((sample) => {
-				next.add(sample.entryId);
-			});
-			return Array.from(next);
-		});
+		const next = new Set(reviewedIds);
+		for (const sample of pageSamples) {
+			next.add(sample.entryId);
+		}
+		replaceReviewedIds(Array.from(next));
 	};
 
 	useEffect(() => {
-		setPage(1);
+		if (viewMode) {
+			setPage(1);
+		}
 	}, [viewMode]);
 
 	useEffect(() => {
@@ -247,11 +194,7 @@ export function OcrDatasetView({
 		key: "labelSeries" | "labelGroup",
 		value: string,
 	) => {
-		setDataset((prev) =>
-			prev.map((entry) =>
-				entry.entryId === entryId ? { ...entry, [key]: value } : entry,
-			),
-		);
+		updateSample(entryId, { [key]: value });
 	};
 
 	return (
@@ -313,9 +256,13 @@ export function OcrDatasetView({
 						) : (
 							pageSamples.map((sample) => {
 								const seriesValue =
-									sample.labelSeries || sample.seriesSkill || UNKNOWN_SKILL_LABEL;
+									sample.labelSeries ||
+									sample.seriesSkill ||
+									UNKNOWN_SKILL_LABEL;
 								const groupValue =
 									sample.labelGroup || sample.groupSkill || UNKNOWN_SKILL_LABEL;
+								const seriesSelectId = `ocr-label-series-${sample.entryId}`;
+								const groupSelectId = `ocr-label-group-${sample.entryId}`;
 								const seriesOptionsForSample = seriesLabelOptions.includes(
 									seriesValue,
 								)
@@ -347,10 +294,16 @@ export function OcrDatasetView({
 													<span>Table: {sample.tableKey}</span>
 													<span>Lang: {sample.language}</span>
 													<span>Source: {sample.source}</span>
-													<span>Saved: {formatTimestamp(sample.createdAt)}</span>
+													<span>
+														Saved: {formatTimestamp(sample.createdAt)}
+													</span>
 												</div>
 												<Button
-													variant={reviewedSet.has(sample.entryId) ? "default" : "outline"}
+													variant={
+														reviewedSet.has(sample.entryId)
+															? "default"
+															: "outline"
+													}
 													size="sm"
 													onClick={() =>
 														handleToggleReviewed(
@@ -365,11 +318,15 @@ export function OcrDatasetView({
 												</Button>
 											</div>
 											<div className="grid gap-2">
-												<label className="grid gap-1">
-													<span className="text-[11px] text-muted-foreground">
+												<div className="grid gap-1">
+													<Label
+														className="text-[11px] text-muted-foreground"
+														htmlFor={seriesSelectId}
+													>
 														Label (Series)
-													</span>
+													</Label>
 													<Select
+														id={seriesSelectId}
 														value={seriesValue}
 														onChange={(event) =>
 															updateLabel(
@@ -386,12 +343,16 @@ export function OcrDatasetView({
 															</option>
 														))}
 													</Select>
-												</label>
-												<label className="grid gap-1">
-													<span className="text-[11px] text-muted-foreground">
+												</div>
+												<div className="grid gap-1">
+													<Label
+														className="text-[11px] text-muted-foreground"
+														htmlFor={groupSelectId}
+													>
 														Label (Group)
-													</span>
+													</Label>
 													<Select
+														id={groupSelectId}
 														value={groupValue}
 														onChange={(event) =>
 															updateLabel(
@@ -408,7 +369,7 @@ export function OcrDatasetView({
 															</option>
 														))}
 													</Select>
-												</label>
+												</div>
 											</div>
 											<div className="grid gap-1 text-muted-foreground">
 												<span className="text-[11px]">
