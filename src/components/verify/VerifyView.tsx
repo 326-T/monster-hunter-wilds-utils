@@ -24,6 +24,7 @@ import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { useSkillOptions } from "../../hooks/useSkillOptions";
 
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]));
+const BULK_WEAPON_ALL = "all";
 
 type VerifyViewProps = {
 	tables: TableState;
@@ -173,7 +174,7 @@ export function VerifyView({
 	const [attributeFilter, setAttributeFilter] = useState("all");
 	const [importMessageKey, setImportMessageKey] = useState("");
 	const [bulkOpen, setBulkOpen] = useState(false);
-	const [bulkWeapon, setBulkWeapon] = useState(WEAPONS[0] ?? "");
+	const [bulkWeapon, setBulkWeapon] = useState(BULK_WEAPON_ALL);
 	const [bulkSeries, setBulkSeries] = useState("all");
 	const [bulkGroup, setBulkGroup] = useState("all");
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -298,7 +299,9 @@ export function VerifyView({
 		const groupFilter = bulkGroup === "all" ? "" : bulkGroup;
 		for (const [tableKey, entries] of Object.entries(tables)) {
 			const tableMeta = tableMetaByKey.get(tableKey);
-			if (!tableMeta || tableMeta.weapon !== bulkWeapon) continue;
+			if (!tableMeta) continue;
+			if (bulkWeapon !== BULK_WEAPON_ALL && tableMeta.weapon !== bulkWeapon)
+				continue;
 			for (const entry of entries) {
 				if (seriesFilter && entry.seriesSkill !== seriesFilter) continue;
 				if (groupFilter && entry.groupSkill !== groupFilter) continue;
@@ -530,7 +533,7 @@ export function VerifyView({
 				cancelLabel={t("verify.bulk.cancel")}
 				applyLabel={t("verify.bulk.apply")}
 				allLabel={t("common.all")}
-				weaponOptions={WEAPONS}
+				weaponOptions={[BULK_WEAPON_ALL, ...WEAPONS]}
 				seriesOptions={seriesFilterOptions}
 				groupOptions={groupFilterOptions}
 				weaponValue={bulkWeapon}
@@ -541,7 +544,11 @@ export function VerifyView({
 				onGroupChange={setBulkGroup}
 				onCancel={() => setBulkOpen(false)}
 				onApply={handleBulkFavorite}
-				getWeaponLabel={getWeaponLabel}
+				getWeaponLabel={(weapon, lang) =>
+					weapon === BULK_WEAPON_ALL
+						? t("common.all")
+						: getWeaponLabel(weapon, lang)
+				}
 				getSkillLabel={getSkillLabel}
 				language={language}
 			/>
