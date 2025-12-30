@@ -2,6 +2,32 @@
 
 このアプリの開発者モードで収集したOCRデータを、Tesseractの学習用に整形します。
 
+## クイック実行（1行）
+
+1. ダウンロードした JSON を `tools/ocr-dataset/input.json` に置く
+2. 1行で学習を実行:
+
+```
+npm run ocr:train
+```
+
+`public/tessdata/jpn.traineddata` が更新されます。
+
+JSON を別の場所に置く場合は:
+
+```
+bash tools/scripts/run-ocr-training.sh /path/to/mhwu-ocr-dataset.json
+```
+
+### スクリプトが使うフォルダ
+
+- 入力: `tools/ocr-dataset/input.json`
+- 生成物: `tools/ocr-dataset/`
+- 学習用配置: `tools/tesstrain/data/mhwu-ground-truth/`
+- 学習済みモデル: `public/tessdata/jpn.traineddata`
+
+---
+
 ## 1. データのエクスポート
 
 `npm run dev` 実行中にOCRを行うと、IndexedDB にデータが保存されます（localStorage は互換用のみ）。

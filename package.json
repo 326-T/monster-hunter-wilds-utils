@@ -9,10 +9,13 @@
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"verify": "npm run format && npm run lint && npm run build",
+		"ocr:train": "bash tools/scripts/run-ocr-training.sh",
 		"check": "biome check .",
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@vercel/analytics": "^1.6.1",
+		"@vercel/speed-insights": "^1.3.1",
 		"i18next": "^25.7.3",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",

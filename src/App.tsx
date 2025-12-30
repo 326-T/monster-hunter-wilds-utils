@@ -7,6 +7,8 @@ import { VerifyView } from "./components/verify/VerifyView";
 import { useSkillOptions } from "./hooks/useSkillOptions";
 import { useTableState } from "./hooks/useTableState";
 import { useTranslation } from "react-i18next";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
 	const [activeView, setActiveView] = useState<"save" | "cursor" | "verify">(
@@ -53,6 +55,8 @@ function App() {
 
 	return (
 		<div className="min-h-screen">
+			<Analytics />
+			<SpeedInsights />
 			<header className="fixed inset-x-0 top-0 z-40 bg-background">
 				<div className="mx-auto max-w-6xl px-6 py-4">
 					<div className="flex flex-col items-center gap-3">
