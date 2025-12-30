@@ -35,7 +35,7 @@
 
 ## IndexedDB
 
-### DB: mhwu-app (version 1)
+### DB: mhwu-app (version 3)
 
 #### objectStore: tableEntries
 
@@ -62,6 +62,23 @@
 
 ```json
 3
+```
+
+#### objectStore: desiredSkills
+
+キー: `id` (string)
+値: `DesiredSkill`
+
+```json
+{
+  "id": "uuid",
+  "tableKey": "大剣::火属性",
+  "seriesSkill": "鎧竜の守護",
+  "groupSkill": "ヌシの誇り",
+  "acquired": false,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "acquiredAt": "2025-01-01T01:23:45.000Z"
+}
 ```
 
 ### DB: mhwu-ocr (version 2)

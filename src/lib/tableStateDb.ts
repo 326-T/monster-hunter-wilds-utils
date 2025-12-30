@@ -11,9 +11,10 @@ type TableStateSnapshot = {
 };
 
 const DB_NAME = "mhwu-app";
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 const TABLE_STORE = "tableEntries";
 const CURSOR_STORE = "cursorState";
+const DESIRED_STORE = "desiredSkills";
 const CURSOR_KEY_ID = "cursor";
 const MIGRATED_TABLES_KEY = `${STORAGE_KEY}.migrated`;
 const MIGRATED_CURSOR_KEY = `${CURSOR_KEY}.migrated`;
@@ -56,6 +57,9 @@ const openAppDb = () =>
 			}
 			if (!db.objectStoreNames.contains(CURSOR_STORE)) {
 				db.createObjectStore(CURSOR_STORE);
+			}
+			if (!db.objectStoreNames.contains(DESIRED_STORE)) {
+				db.createObjectStore(DESIRED_STORE, { keyPath: "id" });
 			}
 		};
 		request.onsuccess = () => resolve(request.result);

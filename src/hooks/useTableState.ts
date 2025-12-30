@@ -193,10 +193,13 @@ export function useTableState() {
 		const cursorByAttribute = Object.fromEntries(
 			ATTRIBUTES.map((attribute) => [attribute, cursor]),
 		);
+		const cursorValue = typeof cursor === "number" ? cursor : 0;
 		return {
 			version: 1,
 			tables,
-			cursor,
+			cursor: cursorValue,
+			cursorId: cursorValue,
+			cursorState: cursorValue,
 			cursorByAttribute,
 		};
 	}, [tables, cursor]);
@@ -210,7 +213,11 @@ export function useTableState() {
 			(record.tables ?? record.data ?? {}) as StoredTableState,
 		);
 		const cursorSource =
-			record.cursor ?? record.cursorState ?? record.cursorByAttribute ?? 0;
+			record.cursor ??
+			record.cursorId ??
+			record.cursorState ??
+			record.cursorByAttribute ??
+			0;
 		const nextCursor = normalizeCursorState(cursorSource);
 		manualOverrideRef.current = true;
 		setTables(nextTables);

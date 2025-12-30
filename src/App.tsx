@@ -9,6 +9,8 @@ import { useTableState } from "./hooks/useTableState";
 import { useTranslation } from "react-i18next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useDesiredSkills } from "./hooks/useDesiredSkills";
+import { normalizeDesiredSkill, type DesiredSkill } from "./lib/desiredSkillDb";
 
 function App() {
 	const [activeView, setActiveView] = useState<"save" | "cursor" | "verify">(
@@ -33,6 +35,14 @@ function App() {
 		exportData,
 		importData,
 	} = useTableState();
+	const {
+		items: desiredSkills,
+		addDesiredSkill,
+		removeDesiredSkill,
+		toggleAcquired,
+		markAcquiredFromSelection,
+		replaceDesiredSkills,
+	} = useDesiredSkills();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -150,15 +160,44 @@ function App() {
 						<CursorView
 							tables={tables}
 							cursor={cursor}
-							onAdvanceCursor={advanceCursor}
+							onAdvanceCursor={(selection) => {
+								advanceCursor(selection);
+								markAcquiredFromSelection({
+									tableKey: selection.tableKey,
+									seriesSkill: selection.seriesSkill,
+									groupSkill: selection.groupSkill,
+								});
+							}}
 						/>
 					)}
 					{activeView === "verify" && (
 						<VerifyView
 							tables={tables}
-							onExport={exportData}
-							onImport={importData}
+							cursor={cursor}
+							onExport={() => ({
+								...exportData(),
+								desiredSkills,
+							})}
+							onImport={(payload) => {
+								const result = importData(payload);
+								if (!result.ok || !payload || typeof payload !== "object") {
+									return result;
+								}
+								const record = payload as Record<string, unknown>;
+								const desiredPayload = record.desiredSkills;
+								if (Array.isArray(desiredPayload)) {
+									const normalized = desiredPayload
+										.map((item) => normalizeDesiredSkill(item))
+										.filter((item): item is DesiredSkill => item !== null);
+									replaceDesiredSkills(normalized);
+								}
+								return result;
+							}}
 							onToggleFavorite={toggleFavorite}
+							desiredSkills={desiredSkills}
+							onAddDesiredSkill={addDesiredSkill}
+							onRemoveDesiredSkill={removeDesiredSkill}
+							onToggleDesiredAcquired={toggleAcquired}
 						/>
 					)}
 				</div>

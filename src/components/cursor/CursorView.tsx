@@ -28,7 +28,12 @@ import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 type CursorViewProps = {
 	tables: TableState;
 	cursor: CursorState;
-	onAdvanceCursor: (selection: { tableKey: string; entryId: string }) => void;
+	onAdvanceCursor: (selection: {
+		tableKey: string;
+		entryId: string;
+		seriesSkill: string;
+		groupSkill: string;
+	}) => void;
 };
 
 export function CursorView({
@@ -249,6 +254,8 @@ export function CursorView({
 													onAdvanceCursor({
 														tableKey: table.key,
 														entryId: entry.id,
+														seriesSkill: entry.seriesSkill,
+														groupSkill: entry.groupSkill,
 													})
 												}
 											>

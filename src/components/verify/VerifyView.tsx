@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Card, CardContent, CardDescription, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 import { ResponsiveSelect } from "../ui/responsive-select";
 import { Select } from "../ui/select";
 import { SectionCard } from "../ui/section-card";
@@ -15,10 +16,12 @@ import {
 	getTableLabel,
 	getWeaponLabel,
 	HIDDEN_SKILL_LABEL,
+	makeTableKey,
 	UNKNOWN_SKILL_LABEL,
 	WEAPONS,
 } from "../../lib/skills";
 import type { TableEntry, TableRef, TableState } from "../../lib/skills";
+import type { DesiredSkill } from "../../lib/desiredSkillDb";
 import { useTranslation } from "react-i18next";
 import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { useSkillOptions } from "../../hooks/useSkillOptions";
@@ -28,6 +31,7 @@ const BULK_WEAPON_ALL = "all";
 
 type VerifyViewProps = {
 	tables: TableState;
+	cursor: number;
 	onExport: () => unknown;
 	onImport: (payload: unknown) => { ok: boolean; messageKey?: string };
 	onToggleFavorite: (
@@ -35,6 +39,14 @@ type VerifyViewProps = {
 		entryId: string,
 		favorite: boolean,
 	) => void;
+	desiredSkills: DesiredSkill[];
+	onAddDesiredSkill: (input: {
+		tableKey: string;
+		seriesSkill?: string;
+		groupSkill?: string;
+	}) => void;
+	onRemoveDesiredSkill: (id: string) => void;
+	onToggleDesiredAcquired: (id: string, acquired: boolean) => void;
 };
 
 type BulkFavoriteDialogProps = {
@@ -163,9 +175,14 @@ function BulkFavoriteDialog({
 
 export function VerifyView({
 	tables,
+	cursor,
 	onExport,
 	onImport,
 	onToggleFavorite,
+	desiredSkills,
+	onAddDesiredSkill,
+	onRemoveDesiredSkill,
+	onToggleDesiredAcquired,
 }: VerifyViewProps) {
 	const { t, i18n } = useTranslation();
 	const language = i18n.language === "en" ? "en" : "ja";
@@ -177,6 +194,11 @@ export function VerifyView({
 	const [bulkWeapon, setBulkWeapon] = useState(BULK_WEAPON_ALL);
 	const [bulkSeries, setBulkSeries] = useState("all");
 	const [bulkGroup, setBulkGroup] = useState("all");
+	const [desiredWeapon, setDesiredWeapon] = useState(WEAPONS[0] ?? "");
+	const [desiredAttribute, setDesiredAttribute] = useState(ATTRIBUTES[0] ?? "");
+	const [desiredAllAttributes, setDesiredAllAttributes] = useState(false);
+	const [desiredSeriesSkill, setDesiredSeriesSkill] = useState("");
+	const [desiredGroupSkill, setDesiredGroupSkill] = useState("");
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const { groupOptions, seriesOptions } = useSkillOptions();
 
@@ -250,6 +272,43 @@ export function VerifyView({
 		return Array.from(new Set(list));
 	}, [groupOptions]);
 
+	const sortedDesiredSkills = useMemo(() => {
+		const locale = language === "en" ? "en-US" : "ja-JP";
+		return [...desiredSkills].sort((a, b) => {
+			const aTable = tableMetaByKey.get(a.tableKey);
+			const bTable = tableMetaByKey.get(b.tableKey);
+			const aWeapon = aTable
+				? getWeaponLabel(aTable.weapon, language)
+				: a.tableKey;
+			const bWeapon = bTable
+				? getWeaponLabel(bTable.weapon, language)
+				: b.tableKey;
+			if (aWeapon !== bWeapon) return aWeapon.localeCompare(bWeapon, locale);
+			const aAttribute = aTable
+				? getAttributeLabel(aTable.attribute, language)
+				: "";
+			const bAttribute = bTable
+				? getAttributeLabel(bTable.attribute, language)
+				: "";
+			if (aAttribute !== bAttribute)
+				return aAttribute.localeCompare(bAttribute, locale);
+			const aSeries = a.seriesSkill
+				? getSkillLabel(a.seriesSkill, language)
+				: t("verify.desired.any");
+			const bSeries = b.seriesSkill
+				? getSkillLabel(b.seriesSkill, language)
+				: t("verify.desired.any");
+			if (aSeries !== bSeries) return aSeries.localeCompare(bSeries, locale);
+			const aGroup = a.groupSkill
+				? getSkillLabel(a.groupSkill, language)
+				: t("verify.desired.any");
+			const bGroup = b.groupSkill
+				? getSkillLabel(b.groupSkill, language)
+				: t("verify.desired.any");
+			return aGroup.localeCompare(bGroup, locale);
+		});
+	}, [desiredSkills, language, t]);
+
 	const tourSteps = useMemo<Step[]>(
 		() => [
 			{
@@ -322,6 +381,47 @@ export function VerifyView({
 			}
 		}
 		setBulkOpen(false);
+	};
+
+	const matchesDesiredSkill = useCallback(
+		(entry: TableEntry, tableKey: string) =>
+			desiredSkills.some((desired) => {
+				if (desired.acquired) return false;
+				if (desired.tableKey !== tableKey) return false;
+				if (desired.seriesSkill && desired.seriesSkill !== entry.seriesSkill)
+					return false;
+				if (desired.groupSkill && desired.groupSkill !== entry.groupSkill)
+					return false;
+				return Boolean(desired.seriesSkill || desired.groupSkill);
+			}),
+		[desiredSkills],
+	);
+
+	const handleAutoFavoriteDesired = useCallback(() => {
+		for (const [tableKey, entries] of Object.entries(tables)) {
+			for (const entry of entries) {
+				if (entry.favorite) continue;
+				if (entry.cursorId < cursor) continue;
+				if (!matchesDesiredSkill(entry, tableKey)) continue;
+				onToggleFavorite(tableKey, entry.id, true);
+			}
+		}
+	}, [tables, cursor, matchesDesiredSkill, onToggleFavorite]);
+
+	const canAddDesiredSkill =
+		Boolean(desiredWeapon && (desiredAllAttributes || desiredAttribute)) &&
+		Boolean(desiredSeriesSkill || desiredGroupSkill);
+
+	const handleAddDesiredSkill = () => {
+		if (!canAddDesiredSkill) return;
+		const attributes = desiredAllAttributes ? ATTRIBUTES : [desiredAttribute];
+		for (const attribute of attributes) {
+			onAddDesiredSkill({
+				tableKey: makeTableKey(desiredWeapon, attribute),
+				seriesSkill: desiredSeriesSkill || undefined,
+				groupSkill: desiredGroupSkill || undefined,
+			});
+		}
 	};
 
 	return (
@@ -435,18 +535,208 @@ export function VerifyView({
 					</div>
 				</SectionCard>
 
-				<SectionCard title={t("verify.sections.table")}>
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<div className="text-xs text-muted-foreground">
-							{t("verify.bulk.note")}
+				<SectionCard title={t("verify.sections.desired")}>
+					<div className="grid gap-4">
+						<p className="text-xs text-muted-foreground">
+							{t("verify.desired.description")}
+						</p>
+						<div className="grid gap-3 lg:grid-cols-4">
+							<div className="space-y-2">
+								<Label>{t("filter.weapon")}</Label>
+								<Select
+									value={desiredWeapon}
+									onChange={(event) => setDesiredWeapon(event.target.value)}
+									className="h-9 text-xs"
+								>
+									{WEAPONS.map((weapon) => (
+										<option key={weapon} value={weapon}>
+											{getWeaponLabel(weapon, language)}
+										</option>
+									))}
+								</Select>
+							</div>
+							<div className="space-y-2">
+								<Label>{t("filter.attribute")}</Label>
+								<Select
+									value={desiredAttribute}
+									onChange={(event) => setDesiredAttribute(event.target.value)}
+									className="h-9 text-xs"
+									disabled={desiredAllAttributes}
+								>
+									{ATTRIBUTES.map((attribute) => (
+										<option key={attribute} value={attribute}>
+											{getAttributeLabel(attribute, language)}
+										</option>
+									))}
+								</Select>
+								<div className="flex items-center gap-2 text-xs text-muted-foreground">
+									<Checkbox
+										id="desired-all-attributes"
+										checked={desiredAllAttributes}
+										onChange={(event) =>
+											setDesiredAllAttributes(event.target.checked)
+										}
+									/>
+									<Label htmlFor="desired-all-attributes" className="text-xs">
+										{t("verify.desired.allAttributes")}
+									</Label>
+								</div>
+							</div>
+							<div className="space-y-2">
+								<Label>{t("verify.desired.series")}</Label>
+								<Select
+									value={desiredSeriesSkill}
+									onChange={(event) =>
+										setDesiredSeriesSkill(event.target.value)
+									}
+									className="h-9 text-xs"
+								>
+									<option value="">{t("verify.desired.any")}</option>
+									{seriesOptions.map((option) => (
+										<option key={option} value={option}>
+											{getSkillLabel(option, language)}
+										</option>
+									))}
+								</Select>
+							</div>
+							<div className="space-y-2">
+								<Label>{t("verify.desired.group")}</Label>
+								<Select
+									value={desiredGroupSkill}
+									onChange={(event) => setDesiredGroupSkill(event.target.value)}
+									className="h-9 text-xs"
+								>
+									<option value="">{t("verify.desired.any")}</option>
+									{groupOptions.map((option) => (
+										<option key={option} value={option}>
+											{getSkillLabel(option, language)}
+										</option>
+									))}
+								</Select>
+							</div>
 						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setBulkOpen(true)}
-						>
-							{t("verify.bulk.open")}
-						</Button>
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span className="text-xs text-muted-foreground">
+								{t("verify.desired.note")}
+							</span>
+							<Button
+								size="sm"
+								onClick={handleAddDesiredSkill}
+								disabled={!canAddDesiredSkill}
+							>
+								{t("verify.desired.add")}
+							</Button>
+						</div>
+						<div className="overflow-x-auto rounded-2xl border border-border/60">
+							<table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
+								<thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
+									<tr>
+										<th className="px-3 py-2">{t("filter.weapon")}</th>
+										<th className="px-3 py-2">{t("filter.attribute")}</th>
+										<th className="px-3 py-2">{t("save.headers.series")}</th>
+										<th className="px-3 py-2">{t("save.headers.group")}</th>
+										<th className="px-3 py-2">{t("verify.desired.status")}</th>
+										<th className="px-3 py-2">{t("verify.desired.actions")}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{sortedDesiredSkills.length === 0 && (
+										<tr>
+											<td
+												colSpan={6}
+												className="px-4 py-6 text-center text-sm text-muted-foreground"
+											>
+												{t("verify.desired.empty")}
+											</td>
+										</tr>
+									)}
+									{sortedDesiredSkills.map((item) => {
+										const tableMeta = tableMetaByKey.get(item.tableKey);
+										const weaponLabel = tableMeta
+											? getWeaponLabel(tableMeta.weapon, language)
+											: item.tableKey;
+										const attributeLabel = tableMeta
+											? getAttributeLabel(tableMeta.attribute, language)
+											: "-";
+										const seriesLabel = item.seriesSkill
+											? getSkillLabel(item.seriesSkill, language)
+											: t("verify.desired.any");
+										const groupLabel = item.groupSkill
+											? getSkillLabel(item.groupSkill, language)
+											: t("verify.desired.any");
+										return (
+											<tr key={item.id} className="border-t border-border/50">
+												<td className="px-3 py-2">{weaponLabel}</td>
+												<td className="px-3 py-2">{attributeLabel}</td>
+												<td className="px-3 py-2">{seriesLabel}</td>
+												<td className="px-3 py-2">{groupLabel}</td>
+												<td className="px-3 py-2">
+													<span
+														className={`rounded-full px-2 py-1 text-[10px] ${
+															item.acquired
+																? "bg-emerald-50 text-emerald-700"
+																: "bg-muted text-muted-foreground"
+														}`}
+													>
+														{item.acquired
+															? t("verify.desired.acquired")
+															: t("verify.desired.pending")}
+													</span>
+												</td>
+												<td className="px-3 py-2">
+													<div className="flex flex-wrap items-center gap-2">
+														<Button
+															variant={item.acquired ? "default" : "outline"}
+															size="sm"
+															onClick={() =>
+																onToggleDesiredAcquired(item.id, !item.acquired)
+															}
+														>
+															{item.acquired
+																? t("verify.desired.acquired")
+																: t("verify.desired.pending")}
+														</Button>
+														<Button
+															variant="ghost"
+															size="sm"
+															onClick={() => onRemoveDesiredSkill(item.id)}
+														>
+															{t("verify.desired.remove")}
+														</Button>
+													</div>
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</SectionCard>
+
+				<SectionCard title={t("verify.sections.table")}>
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div className="space-y-1 text-xs text-muted-foreground">
+							<div>{t("verify.bulk.note")}</div>
+							<div>{t("verify.desired.autoFavoriteNote")}</div>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleAutoFavoriteDesired}
+								disabled={desiredSkills.length === 0}
+							>
+								{t("verify.desired.autoFavorite")}
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setBulkOpen(true)}
+							>
+								{t("verify.bulk.open")}
+							</Button>
+						</div>
 					</div>
 					<div
 						className="overflow-x-auto rounded-2xl border border-border/60"
