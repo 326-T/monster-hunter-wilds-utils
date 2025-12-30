@@ -228,6 +228,18 @@ export function VerifyView({
 		return Array.from(set).sort((a, b) => a - b);
 	}, [filteredTables, tables]);
 
+	const advancedCursorIds = useMemo(() => {
+		const set = new Set<number>();
+		for (const entries of Object.values(tables)) {
+			for (const entry of entries ?? []) {
+				if (entry.advancedAt) {
+					set.add(entry.cursorId);
+				}
+			}
+		}
+		return set;
+	}, [tables]);
+
 	const seriesFilterOptions = useMemo(() => {
 		const list = [HIDDEN_SKILL_LABEL, UNKNOWN_SKILL_LABEL, ...seriesOptions];
 		return Array.from(new Set(list));
@@ -472,6 +484,10 @@ export function VerifyView({
 										<td className="px-3 py-2">{cursorId + 1}</td>
 										{filteredTables.map((table) => {
 											const entry = entryMaps.get(table.key)?.get(cursorId);
+											const isPassedUnselected =
+												entry &&
+												advancedCursorIds.has(entry.cursorId) &&
+												!entry.advancedAt;
 											return (
 												<td key={table.key} className="px-3 py-2 align-top">
 													{entry ? (
@@ -485,9 +501,11 @@ export function VerifyView({
 																)
 															}
 															className={`grid w-full gap-1 rounded-lg border p-2 text-left text-[10px] transition-colors ${
-																entry.favorite
-																	? "border-amber-200 bg-amber-50/70 text-amber-900"
-																	: "border-border/40 bg-background hover:border-border/70 hover:bg-muted/40"
+																isPassedUnselected
+																	? "border-border/50 bg-muted/60 text-muted-foreground"
+																	: entry.favorite
+																		? "border-amber-200 bg-amber-50/70 text-amber-900"
+																		: "border-border/40 bg-background hover:border-border/70 hover:bg-muted/40"
 															}`}
 															title={
 																entry.favorite

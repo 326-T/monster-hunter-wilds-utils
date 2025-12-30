@@ -44,6 +44,7 @@ export type TableEntry = {
 	favorite: boolean;
 	createdAt: string;
 	cursorId: number;
+	advancedAt?: string;
 };
 
 export type TableState = Record<string, TableEntry[]>;

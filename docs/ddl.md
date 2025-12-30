@@ -50,7 +50,8 @@
   "seriesSkill": "鎧竜の守護",
   "favorite": true,
   "createdAt": "2025-01-01T00:00:00.000Z",
-  "cursorId": 12
+  "cursorId": 12,
+  "advancedAt": "2025-01-01T00:10:00.000Z"
 }
 ```
 

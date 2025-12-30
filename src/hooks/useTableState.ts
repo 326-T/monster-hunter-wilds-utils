@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	allTables,
-	ATTRIBUTES,
-	createId,
-	UNKNOWN_SKILL_LABEL,
-} from "../lib/skills";
+import { allTables, ATTRIBUTES, createId } from "../lib/skills";
 import type { CursorState, TableEntry, TableState } from "../lib/skills";
 import {
 	loadTableStateAsync,
@@ -164,32 +159,35 @@ export function useTableState() {
 		[],
 	);
 
-	const advanceCursor = useCallback(() => {
-		const cursorId = cursor;
-		const now = new Date().toISOString();
-		setTables((prev) => {
-			const next: TableState = { ...prev };
-			for (const table of allTables) {
-				const tableEntries = [...(next[table.key] ?? [])];
-				const hasCursorEntry = tableEntries.some(
-					(entry) => entry.cursorId === cursorId,
-				);
-				if (!hasCursorEntry) {
-					tableEntries.push({
-						id: createId(),
-						groupSkill: UNKNOWN_SKILL_LABEL,
-						seriesSkill: UNKNOWN_SKILL_LABEL,
-						favorite: false,
-						createdAt: now,
-						cursorId,
-					});
+	const advanceCursor = useCallback(
+		(selected?: { tableKey: string; entryId: string }) => {
+			const cursorId = cursor;
+			const now = new Date().toISOString();
+			setTables((prev) => {
+				const next: TableState = { ...prev };
+				for (const table of allTables) {
+					const tableEntries = [...(next[table.key] ?? [])];
+					const updatedEntries = tableEntries.map((entry) =>
+						entry.cursorId === cursorId && entry.advancedAt
+							? { ...entry, advancedAt: undefined }
+							: entry,
+					);
+					next[table.key] = updatedEntries;
 				}
-				next[table.key] = tableEntries;
-			}
-			return next;
-		});
-		setCursor(cursorId + 1);
-	}, [cursor]);
+				if (selected) {
+					const targetEntries = next[selected.tableKey] ?? [];
+					next[selected.tableKey] = targetEntries.map((entry) =>
+						entry.id === selected.entryId
+							? { ...entry, advancedAt: now }
+							: entry,
+					);
+				}
+				return next;
+			});
+			setCursor(cursorId + 1);
+		},
+		[cursor],
+	);
 
 	const exportData = useCallback(() => {
 		const cursorByAttribute = Object.fromEntries(
