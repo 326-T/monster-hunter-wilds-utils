@@ -627,16 +627,28 @@ export function VerifyView({
 								{t("verify.desired.add")}
 							</Button>
 						</div>
-						<div className="overflow-x-auto rounded-2xl border border-border/60">
+						<div className="max-h-[360px] overflow-auto rounded-2xl border border-border/60">
 							<table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
 								<thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
 									<tr>
-										<th className="px-3 py-2">{t("filter.weapon")}</th>
-										<th className="px-3 py-2">{t("filter.attribute")}</th>
-										<th className="px-3 py-2">{t("save.headers.series")}</th>
-										<th className="px-3 py-2">{t("save.headers.group")}</th>
-										<th className="px-3 py-2">{t("verify.desired.status")}</th>
-										<th className="px-3 py-2">{t("verify.desired.actions")}</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("filter.weapon")}
+										</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("filter.attribute")}
+										</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("save.headers.series")}
+										</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("save.headers.group")}
+										</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("verify.desired.status")}
+										</th>
+										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
+											{t("verify.desired.actions")}
+										</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -739,15 +751,20 @@ export function VerifyView({
 						</div>
 					</div>
 					<div
-						className="overflow-x-auto rounded-2xl border border-border/60"
+						className="max-h-[70vh] overflow-auto rounded-2xl border border-border/60"
 						data-tour="verify-table"
 					>
 						<table className="w-max min-w-full border-collapse text-xs whitespace-nowrap">
 							<thead className="bg-background text-left text-xs uppercase tracking-[0.12em] text-muted-foreground">
 								<tr>
-									<th className="px-4 py-3">{t("verify.header.cursor")}</th>
+									<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-4 py-3">
+										{t("verify.header.cursor")}
+									</th>
 									{filteredTables.map((table) => (
-										<th key={table.key} className="px-3 py-2">
+										<th
+											key={table.key}
+											className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2"
+										>
 											<div className="text-[10px] text-muted-foreground">
 												{getTableKeyLabel(table, language)}
 											</div>
