@@ -26,6 +26,25 @@ import { useTranslation } from "react-i18next";
 import Joyride, { STATUS, type CallBackProps, type Step } from "react-joyride";
 import { useSkillOptions } from "../../hooks/useSkillOptions";
 
+const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
+	<svg
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		aria-hidden="true"
+		{...props}
+	>
+		<path d="M3 6h18" />
+		<path d="M8 6V4h8v2" />
+		<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+		<path d="M10 11v6" />
+		<path d="M14 11v6" />
+	</svg>
+);
+
 const tableMetaByKey = new Map(allTables.map((table) => [table.key, table]));
 const BULK_WEAPON_ALL = "all";
 
@@ -644,7 +663,7 @@ export function VerifyView({
 											{t("save.headers.group")}
 										</th>
 										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
-											{t("verify.desired.status")}
+											{t("verify.desired.acquired")}
 										</th>
 										<th className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2">
 											{t("verify.desired.actions")}
@@ -655,7 +674,7 @@ export function VerifyView({
 									{sortedDesiredSkills.length === 0 && (
 										<tr>
 											<td
-												colSpan={6}
+												colSpan={5}
 												className="px-4 py-6 text-center text-sm text-muted-foreground"
 											>
 												{t("verify.desired.empty")}
@@ -683,39 +702,24 @@ export function VerifyView({
 												<td className="px-3 py-2">{seriesLabel}</td>
 												<td className="px-3 py-2">{groupLabel}</td>
 												<td className="px-3 py-2">
-													<span
-														className={`rounded-full px-2 py-1 text-[10px] ${
-															item.acquired
-																? "bg-emerald-50 text-emerald-700"
-																: "bg-muted text-muted-foreground"
-														}`}
-													>
-														{item.acquired
-															? t("verify.desired.acquired")
-															: t("verify.desired.pending")}
-													</span>
+													<Checkbox
+														checked={item.acquired}
+														aria-label={t("verify.desired.acquired")}
+														onChange={() =>
+															onToggleDesiredAcquired(item.id, !item.acquired)
+														}
+													/>
 												</td>
 												<td className="px-3 py-2">
-													<div className="flex flex-wrap items-center gap-2">
-														<Button
-															variant={item.acquired ? "default" : "outline"}
-															size="sm"
-															onClick={() =>
-																onToggleDesiredAcquired(item.id, !item.acquired)
-															}
-														>
-															{item.acquired
-																? t("verify.desired.acquired")
-																: t("verify.desired.pending")}
-														</Button>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() => onRemoveDesiredSkill(item.id)}
-														>
-															{t("verify.desired.remove")}
-														</Button>
-													</div>
+													<Button
+														variant="ghost"
+														size="icon"
+														onClick={() => onRemoveDesiredSkill(item.id)}
+														aria-label={t("verify.desired.remove")}
+														title={t("verify.desired.remove")}
+													>
+														<TrashIcon className="h-4 w-4" />
+													</Button>
 												</td>
 											</tr>
 										);
